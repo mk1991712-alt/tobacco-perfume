@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>المتجر | Tobacco Perfume</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap&font-display=swap" rel="stylesheet" />
+  <style>
+    .filter-bar { padding: 0 12px 12px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      flex-shrink: 0;
+      padding: 8px 18px;
+      border-radius: 50px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-2);
+      font-family: 'Cairo', sans-serif;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: all var(--transition);
+    }
+    .filter-btn.active { background: var(--gold-glow); border-color: var(--gold); color: var(--gold); }
+    .filter-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .search-topbar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px 12px;
+    }
+    .search-topbar input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      padding: 10px 16px;
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      font-size: 13px;
+      direction: rtl;
+      transition: border-color var(--transition);
+    }
+    .search-topbar input:focus { border-color: var(--gold-border); outline: none; }
+    .search-topbar input::placeholder { color: var(--text-3); }
+    .products-count { padding: 0 16px 10px; font-size: 12px; color: var(--text-2); }
+    .products-count span { color: var(--gold); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <a href="index.html" class="logo"><img src="logo.png" alt="Tobacco Perfume" /></a>
+  <div class="top-bar-actions">
+    <a href="cart.html" class="icon-btn">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+      <span class="badge" id="nav-cart-count" style="display:none">0</span>
+    </a>
+  </div>
+</header>
+
+<main>
+
+  <div class="page-header">
+    <h1>مجموعة <span>العطور</span></h1>
+    <p>اكتشف 34 عطرًا فاخرًا مستوحى من أشهر دور العطور</p>
+  </div>
+
+  <!-- Search -->
+  <div class="search-topbar">
+    <input type="text" id="shop-search" placeholder="ابحث عن عطر..." oninput="filterProducts()" />
+  </div>
+
+  <!-- Filter Pills -->
+  <div class="filter-bar">
+    <button class="filter-btn active" data-cat="all"    onclick="setFilter(this,'all')">✨ الكل</button>
+    <button class="filter-btn"        data-cat="men"    onclick="setFilter(this,'men')">🔷 رجالي</button>
+    <button class="filter-btn"        data-cat="women"  onclick="setFilter(this,'women')">🌸 نسائي</button>
+    <button class="filter-btn"        data-cat="unisex" onclick="setFilter(this,'unisex')">🌹 يونيسكس</button>
+  </div>
+
+  <p class="products-count"><span id="count-label">34</span> عطر</p>
+
+  <div class="products-grid" id="shop-grid"></div>
+
+  <div style="height:12px"></div>
+</main>
+
+<script src="data.js"></script>
+<script src="cart.js"></script>
+<script src="components.js"></script>
+<script>
+  let currentCat = 'all';
+  let searchQ = '';
+
+  // Read URL param
+  const urlCat = new URLSearchParams(window.location.search).get('cat');
+  if (urlCat) {
+    currentCat = urlCat;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.cat === urlCat);
+    });
+  }
+
+  buildBottomNav('shop');
+
+  function buildCard(p) {
+    const defaultSize = p.price50ml ? '50' : '60';
+    const defaultPrice = defaultSize === '50' ? p.price50ml : p.price60ml;
+    const old = getOldPriceLocal(defaultPrice);
+    const disc = discountPct(defaultPrice);
+    return `
+      <div class="product-card" onclick="openModal(${p.id})">
+        <div class="card-thumb ${p.category}">
+          <div class="card-thumb-bg"></div>
+          <div class="bottle-wrap">${p.image ? `<img src="${p.image}" class="bottle-img" alt="${p.nameEn}" loading="lazy" onerror="this.style.opacity='0'">` : bottleSVG()}</div>
+          <div class="card-brand-label">${p.brand || p.nameEn}</div>
+          <div class="discount-badge">-${disc}%</div>
+        </div>
+        <div class="card-body">
+          <div class="card-stars">
+            ${renderStarsRow(p.rating)}
+            <span class="rating-count">${(p.rating * 12).toFixed(0)}</span>
+          </div>
+          <div class="card-name">${p.nameAr}</div>
+          <div class="card-brand">${p.nameEn}${p.brand ? ' · ' + p.brand : ''}</div>
+          <div class="card-sizes" onclick="event.stopPropagation()">
+            ${p.price50ml ? `<button class="size-pill active" data-size="50" onclick="selectSize(this,${p.id})">50مل</button>` : ''}
+            ${p.price60ml ? `<button class="size-pill${!p.price50ml?' active':''}" data-size="60" onclick="selectSize(this,${p.id})">60مل</button>` : ''}
+          </div>
+          <div class="card-price-row">
+            <span class="price-new" id="price-${p.id}">${defaultPrice} جنيه</span>
+            <span class="price-old" id="old-${p.id}">${old} جنيه</span>
+          </div>
+          <button class="card-add-btn" onclick="event.stopPropagation(); addToCartFromCard(${p.id}, this)">+ أضف للسلة</button>
+          <div class="bottle-notice">
+            <span class="bn-icon">ℹ️</span>
+            <span>الصورة للمرجع فقط · المنتج يصلك في <strong>زجاجة Tobacco Perfume</strong> الخاصة</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function selectSize(btn, id) {
+    btn.closest('.card-sizes').querySelectorAll('.size-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const p = getPerfumeById(id);
+    const price = btn.dataset.size === '50' ? p.price50ml : p.price60ml;
+    document.getElementById('price-' + id).textContent = price + ' جنيه';
+    document.getElementById('old-' + id).textContent = getOldPriceLocal(price) + ' جنيه';
+  }
+
+  function setFilter(btn, cat) {
+    currentCat = cat;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterProducts();
+  }
+
+  function filterProducts() {
+    searchQ = document.getElementById('shop-search').value.trim().toLowerCase();
+    let list = currentCat === 'all' ? perfumeCatalog : perfumeCatalog.filter(p => p.category === currentCat);
+    if (searchQ) list = list.filter(p =>
+      p.nameAr.includes(searchQ) || p.nameEn.toLowerCase().includes(searchQ) || (p.brand || '').toLowerCase().includes(searchQ)
+    );
+    document.getElementById('count-label').textContent = list.length;
+    document.getElementById('shop-grid').innerHTML = list.map(buildCard).join('') || `<div style="grid-column:1/-1;padding:40px 20px;text-align:center;color:var(--text-2);">لا توجد نتائج</div>`;
+  }
+
+  filterProducts();
+  syncCartBadges();
+</script>
+</body>
+</html>
+

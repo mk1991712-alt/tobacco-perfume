@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>السلة | Tobacco Perfume</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap&font-display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<header class="top-bar">
+  <a href="index.html" class="logo"><img src="logo.png" alt="Tobacco Perfume" /></a>
+  <div class="top-bar-actions">
+    <a href="cart.html" class="icon-btn">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+      <span class="badge" id="nav-cart-count" style="display:none">0</span>
+    </a>
+  </div>
+</header>
+
+<main>
+  <div class="page-header">
+    <h1>سلة <span>المشتريات</span></h1>
+    <p id="cart-subtitle">جارٍ التحميل...</p>
+  </div>
+
+  <div id="empty-state" class="empty-state" style="display:none">
+    <div class="empty-icon">🛒</div>
+    <h3>السلة فارغة</h3>
+    <p>لم تضف أي عطور بعد.<br/>اكتشف مجموعتنا الفاخرة الآن!</p>
+    <a href="shop.html" class="btn-gold mt-12">تسوّق الآن</a>
+  </div>
+
+  <div id="cart-content">
+    <div class="cart-list" id="cart-list"></div>
+
+    <div class="cart-summary mt-12" id="cart-summary" style="display:none">
+      <div class="summary-row">
+        <span>عدد العناصر</span>
+        <span id="s-count">0</span>
+      </div>
+      <div class="summary-row">
+        <span>الشحن</span>
+        <span style="color:var(--green);font-weight:700">مجاني 🎉</span>
+      </div>
+      <div class="summary-row total">
+        <span>الإجمالي</span>
+        <span class="val" id="s-total">0 جنيه</span>
+      </div>
+      <div class="cart-actions">
+        <a href="checkout.html" class="btn-gold wide">إتمام الطلب ←</a>
+        <button class="btn-outline wide" onclick="confirmClear()">إفراغ السلة 🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:12px"></div>
+</main>
+
+<script src="data.js"></script>
+<script src="cart.js"></script>
+<script src="components.js"></script>
+<script>
+  buildBottomNav('cart');
+
+  const catEmoji = { men: '🔷', women: '🌸', unisex: '🌹' };
+
+  function renderCart() {
+    const cart = getCart();
+    const empty = document.getElementById('empty-state');
+    const content = document.getElementById('cart-content');
+    const list = document.getElementById('cart-list');
+    const summary = document.getElementById('cart-summary');
+
+    if (!cart.length) {
+      empty.style.display = 'flex';
+      content.style.display = 'none';
+      document.getElementById('cart-subtitle').textContent = 'السلة فارغة';
+      return;
+    }
+
+    empty.style.display = 'none';
+    content.style.display = 'block';
+    summary.style.display = 'block';
+
+    const count = getCartCount();
+    document.getElementById('cart-subtitle').textContent = count + ' عنصر في سلتك';
+
+    list.innerHTML = cart.map(item => `
+      <div class="cart-item" id="ci-${item.key.replace(/-/g,'_')}">
+        <div class="cart-item-thumb ${item.category || 'unisex'}">${catEmoji[item.category || 'unisex'] || '✨'}</div>
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.nameAr}</div>
+          <div class="cart-item-sub">${item.nameEn}${item.brand ? ' · ' + item.brand : ''} · ${item.size} مل</div>
+          <div class="cart-item-price">${item.price * item.qty} جنيه</div>
+        </div>
+        <div class="cart-qty-row">
+          <div class="qty-ctrl">
+            <button onclick="deltaQty('${item.key}', -1)">−</button>
+            <span class="qty-num">${item.qty}</span>
+            <button onclick="deltaQty('${item.key}', 1)">+</button>
+          </div>
+          <button class="remove-item-btn" onclick="removeItem('${item.key}')">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('s-count').textContent = count;
+    document.getElementById('s-total').textContent = getCartTotal() + ' جنيه';
+    syncCartBadges();
+  }
+
+  function deltaQty(key, delta) {
+    changeQty(key, delta);
+    renderCart();
+  }
+
+  function removeItem(key) {
+    removeFromCart(key);
+    renderCart();
+  }
+
+  function confirmClear() {
+    if (confirm('هل تريد إفراغ السلة؟')) { clearCart(); renderCart(); }
+  }
+
+  renderCart();
+</script>
+</body>
+</html>
+

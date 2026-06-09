@@ -1,0 +1,10 @@
+{
+  "name": "tobacco-perfume",
+  "version": "1.0.0",
+  "description": "Tobacco Perfume - Luxury Fragrance Store",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": ["perfume", "ecommerce", "arabic"],
+  "license": "UNLICENSED"
+}
