@@ -1178,8 +1178,17 @@ main { animation: pageFade var(--transition) both; }
 textarea.form-input { resize: vertical; min-height: 85px; }
 
 /* Payment Options */
-.payment-option {
+/* wrapper الذي يضمن ظهور الخيارات الثلاثة دائماً */
+.payment-options-list {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* كل خيار دفع */
+.payment-option {
+  display: flex !important;   /* !important يمنع أي override من أي مكان */
+  visibility: visible !important;
   align-items: center;
   gap: 12px;
   background: var(--bg-input);
@@ -1187,11 +1196,12 @@ textarea.form-input { resize: vertical; min-height: 85px; }
   border-radius: 12px;
   padding: 12px 14px;
   cursor: pointer;
-  margin-bottom: 8px;
   transition: all var(--transition);
+  width: 100%;
+  box-sizing: border-box;
 }
-.payment-option:last-child { margin-bottom: 0; }
 .payment-option.active { border-color: var(--gold); background: var(--gold-glow); }
+.payment-option:hover   { border-color: rgba(201,168,76,0.4); }
 .payment-option input[type="radio"] { display: none; }
 .pay-radio {
   width: 18px; height: 18px;
@@ -1291,6 +1301,9 @@ textarea.form-input { resize: vertical; min-height: 85px; }
   .hero-title { font-size: 32px; }
   .checkout-wrap { max-width: 680px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
   .checkout-wrap .form-card.full { grid-column: 1 / -1; }
+  /* ضمان ظهور خيارات الدفع الثلاثة على الشاشات الكبيرة */
+  .payment-options-list { display: flex !important; flex-direction: column; gap: 8px; width: 100%; }
+  .payment-option { display: flex !important; visibility: visible !important; }
 }
 
 @media (min-width: 768px) {
