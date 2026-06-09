@@ -109,6 +109,16 @@
           </div>
         </div>
 
+        <div class="payment-option" id="pay-card" onclick="selectPayment('card')">
+          <input type="radio" name="pay" value="card" />
+          <div class="pay-radio"></div>
+          <div class="pay-icon">💳</div>
+          <div class="pay-info">
+            <h4>بطاقة ائتمان / Visa / Mastercard</h4>
+            <p>دفع آمن عبر Paymob — مشفّر 100%</p>
+          </div>
+        </div>
+
         <div class="payment-option" id="pay-transfer" onclick="selectPayment('transfer')">
           <input type="radio" name="pay" value="transfer" />
           <div class="pay-radio"></div>
@@ -329,8 +339,12 @@
   function selectPayment(type) {
     selectedPayment = type;
     document.getElementById('pay-cod').classList.toggle('active', type === 'cod');
+    document.getElementById('pay-card').classList.toggle('active', type === 'card');
     document.getElementById('pay-transfer').classList.toggle('active', type === 'transfer');
     document.getElementById('transfer-box').style.display = type === 'transfer' ? 'block' : 'none';
+    // تغيير نص زرار التأكيد
+    const btn = document.querySelector('.btn-gold[onclick="submitOrder()"]');
+    if (btn) btn.textContent = type === 'card' ? 'الدفع بالبطاقة 💳' : 'تأكيد الطلب 🎉';
   }
 
   function previewFile(e) {
@@ -407,22 +421,65 @@
     orders.push({ ...payload, cart });
     localStorage.setItem('tp_orders', JSON.stringify(orders));
 
-    // --- Send to Google Sheets if webhook is configured ---
     const submitBtn = document.querySelector('.btn-gold[onclick="submitOrder()"]');
-    if (submitBtn) { submitBtn.classList.add('loading'); submitBtn.textContent = 'جارٍ الإرسال...'; }
+    if (submitBtn) { submitBtn.classList.add('loading'); submitBtn.textContent = 'جارٍ المعالجة...'; }
     isSubmitting = true;
 
+    // ── دفع بالبطاقة عبر Paymob ──────────────────────
+    if (selectedPayment === 'card') {
+      try {
+        const paymobRes = await fetch('/api/paymob', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            phone,
+            email: '',        // اختياري
+            address,
+            amount: total,
+            orderId
+          })
+        });
+
+        if (!paymobRes.ok) {
+          const errData = await paymobRes.json().catch(() => ({}));
+          throw new Error(errData.message || 'فشل الاتصال بنظام الدفع');
+        }
+
+        const paymobData = await paymobRes.json();
+        const { payment_token, iframe_id } = paymobData;
+
+        if (!payment_token) throw new Error('لم يتم استلام رمز الدفع');
+
+        // حفظ الطلب محلياً قبل التحويل
+        const orders = JSON.parse(localStorage.getItem('tp_orders') || '[]');
+        orders.push({ ...payload, cart, status: 'pending_payment' });
+        localStorage.setItem('tp_orders', JSON.stringify(orders));
+
+        // تحويل المستخدم لصفحة دفع Paymob
+        const iframeUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframe_id}?payment_token=${payment_token}`;
+        window.location.href = iframeUrl;
+        return; // إيقاف التنفيذ — المستخدم هيتحول لـ Paymob
+
+      } catch (err) {
+        isSubmitting = false;
+        if (submitBtn) { submitBtn.classList.remove('loading'); submitBtn.textContent = 'الدفع بالبطاقة 💳'; }
+        showToast(err.message || 'حدث خطأ في نظام الدفع', '❌');
+        return;
+      }
+    }
+
+    // ── دفع عند الاستلام أو تحويل ────────────────────
     if (SHEET_WEBHOOK_URL) {
       try {
         await fetch(SHEET_WEBHOOK_URL, {
           method: 'POST',
-          mode: 'no-cors',       // Google Apps Script requires no-cors
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       } catch (err) {
         console.warn('Sheet sync failed (non-critical):', err);
-        // Order is saved locally, don't block the user
       }
     }
 
