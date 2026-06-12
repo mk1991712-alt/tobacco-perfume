@@ -278,7 +278,11 @@
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <div class="nav-item active" onclick="showPage('products')" id="nav-products">
+    <div class="nav-item active" onclick="showPage('stats')" id="nav-stats">
+      <span class="icon">📊</span> الإحصائيات
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-item" onclick="showPage('products')" id="nav-products">
       <span class="icon">📦</span> المنتجات
     </div>
     <div class="nav-item" onclick="showPage('add')" id="nav-add">
@@ -300,8 +304,36 @@
   <!-- Main Content -->
   <div class="main-content">
 
+    <!-- ── STATS PAGE ── -->
+    <div class="page active" id="page-stats">
+      <div class="page-title">الإحصائيات</div>
+      <div class="stats-grid" id="main-stats-grid"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px" id="charts-row">
+
+        <!-- آخر الزيارات -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--gold)">📅 آخر الزيارات</div>
+          <div id="visit-log-list" style="font-size:12px;color:var(--text-2);line-height:2"></div>
+        </div>
+
+        <!-- آخر الطلبات -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--gold)">🧾 آخر الطلبات</div>
+          <div id="recent-orders-list" style="font-size:12px;color:var(--text-2);line-height:2"></div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--gold)">📈 الزيارات اليومية (آخر 7 أيام)</div>
+        <div id="daily-chart" style="display:flex;align-items:flex-end;gap:8px;height:80px"></div>
+        <div id="daily-labels" style="display:flex;gap:8px;margin-top:6px;font-size:10px;color:var(--text-3)"></div>
+      </div>
+    </div>
+
     <!-- ── PRODUCTS PAGE ── -->
-    <div class="page active" id="page-products">
+    <div class="page" id="page-products">
       <div class="page-title">إدارة المنتجات</div>
 
       <div class="stats-grid" id="stats-grid"></div>
@@ -531,9 +563,93 @@ function showPage(name) {
   const navEl = document.getElementById('nav-' + name);
   if (navEl) navEl.classList.add('active');
 
+  if (name === 'stats')    { renderMainStats(); }
   if (name === 'products') { renderTable(); renderStats(); }
   if (name === 'add')      { renderAddForm(); }
   if (name === 'orders')   { renderOrders(); }
+}
+
+// ═══════════════════════════════════════════
+// MAIN STATS PAGE
+// ═══════════════════════════════════════════
+function renderMainStats() {
+  const visitCount  = parseInt(localStorage.getItem('tp_visit_count') || '0');
+  const visitLog    = JSON.parse(localStorage.getItem('tp_visit_log') || '[]');
+  let orders = [];
+  try { orders = JSON.parse(localStorage.getItem('tp_orders') || '[]'); } catch(e){}
+  const orderCount  = orders.length;
+  const totalRev    = orders.reduce((s, o) => s + (parseInt(o.total) || 0), 0);
+  const prodCount   = catalog.length;
+
+  // بطاقات الإحصائيات
+  document.getElementById('main-stats-grid').innerHTML = `
+    <div class="stat-card" style="border-color:var(--gold-border)">
+      <div class="stat-label">👥 إجمالي الزوار</div>
+      <div class="stat-val">${visitCount.toLocaleString()}</div>
+      <div class="stat-sub">من هذا المتصفح</div>
+    </div>
+    <div class="stat-card" style="border-color:var(--gold-border)">
+      <div class="stat-label">🧾 إجمالي الطلبات</div>
+      <div class="stat-val">${orderCount}</div>
+    </div>
+    <div class="stat-card" style="border-color:var(--gold-border)">
+      <div class="stat-label">💰 إجمالي المبيعات</div>
+      <div class="stat-val" style="font-size:20px">${totalRev.toLocaleString()}</div>
+      <div class="stat-sub">جنيه</div>
+    </div>
+    <div class="stat-card" style="border-color:var(--gold-border)">
+      <div class="stat-label">📦 عدد المنتجات</div>
+      <div class="stat-val">${prodCount}</div>
+    </div>
+  `;
+
+  // آخر 10 زيارات
+  const recentVisits = visitLog.slice(-10).reverse();
+  document.getElementById('visit-log-list').innerHTML = recentVisits.length
+    ? recentVisits.map(v => {
+        const d = new Date(v.date);
+        const label = d.toLocaleDateString('ar-EG') + ' ' + d.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'});
+        const page = v.page === '/' || v.page.includes('index') ? '🏠 الرئيسية'
+                   : v.page.includes('shop') ? '🛍 المتجر'
+                   : v.page.includes('cart') ? '🛒 السلة'
+                   : v.page.includes('checkout') ? '✅ الدفع' : v.page;
+        return `<div>${page} · <span style="color:var(--text-3)">${label}</span></div>`;
+      }).join('')
+    : '<div style="color:var(--text-3)">لا توجد زيارات مسجلة بعد</div>';
+
+  // آخر 5 طلبات
+  const recentOrders = orders.slice(-5).reverse();
+  document.getElementById('recent-orders-list').innerHTML = recentOrders.length
+    ? recentOrders.map(o => `
+        <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:6px">
+          <span><strong style="color:var(--text)">${o.name || '—'}</strong> · ${o.phone || ''}</span>
+          <span style="color:var(--gold);font-weight:700">${o.total} ج</span>
+        </div>`).join('')
+    : '<div style="color:var(--text-3)">لا توجد طلبات بعد</div>';
+
+  // مخطط الزيارات اليومية (آخر 7 أيام)
+  const days = {};
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days[d.toDateString()] = 0;
+  }
+  visitLog.forEach(v => {
+    const k = new Date(v.date).toDateString();
+    if (days[k] !== undefined) days[k]++;
+  });
+  const vals = Object.values(days);
+  const keys = Object.keys(days);
+  const maxVal = Math.max(...vals, 1);
+  document.getElementById('daily-chart').innerHTML = vals.map((v, i) => `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <span style="font-size:10px;color:var(--text-2)">${v}</span>
+      <div style="width:100%;background:var(--gold);border-radius:4px 4px 0 0;height:${Math.max(4, Math.round(v/maxVal*60))}px;opacity:${v?1:0.2}"></div>
+    </div>
+  `).join('');
+  document.getElementById('daily-labels').innerHTML = keys.map(k => {
+    const d = new Date(k);
+    return `<div style="flex:1;text-align:center">${d.getMonth()+1}/${d.getDate()}</div>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════════
@@ -904,9 +1020,8 @@ function esc(str) {
 // ═══════════════════════════════════════════
 function initApp() {
   loadCatalog();
-  renderStats();
-  renderTable();
   updateBadge();
+  renderMainStats();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

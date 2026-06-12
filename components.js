@@ -407,3 +407,18 @@ function submitReview(id) {
 
 /* ---- INIT KEYBOARD CLOSE ---- */
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeSearch(); } });
+
+/* ---- VISITOR TRACKING ---- */
+(function trackVisit() {
+  // عد زيارة واحدة لكل session
+  if (!sessionStorage.getItem('tp_visited')) {
+    sessionStorage.setItem('tp_visited', '1');
+    const count = parseInt(localStorage.getItem('tp_visit_count') || '0') + 1;
+    localStorage.setItem('tp_visit_count', count);
+    // تسجيل آخر 100 زيارة مع التاريخ
+    const log = JSON.parse(localStorage.getItem('tp_visit_log') || '[]');
+    log.push({ date: new Date().toISOString(), page: location.pathname });
+    if (log.length > 100) log.splice(0, log.length - 100);
+    localStorage.setItem('tp_visit_log', JSON.stringify(log));
+  }
+})();

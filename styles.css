@@ -1310,3 +1310,23 @@ textarea.form-input { resize: vertical; min-height: 85px; }
   .bottom-nav { display: flex; justify-content: center; }
   .nav-items { max-width: 400px; }
 }
+
+/* ============================================================
+   SITE FOOTER
+   ============================================================ */
+.site-footer {
+  text-align: center;
+  padding: 18px 16px calc(70px + 18px);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  margin-top: 32px;
+}
+.site-footer-text {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.7;
+}
+.site-footer-text a {
+  color: var(--text-3);
+  text-decoration: none;
+}
+.site-footer-text a:hover { color: var(--gold); }
