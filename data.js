@@ -318,6 +318,20 @@ function getPerfumeById(id) {
   return perfumeCatalog.find(p => p.id === id);
 }
 
+// تطبيق تعديلات الأدمن من localStorage فوراً
+(function applyAdminOverrides() {
+  try {
+    const saved = localStorage.getItem('tp_admin_catalog');
+    if (!saved) return;
+    const overrides = JSON.parse(saved);
+    if (!Array.isArray(overrides) || !overrides.length) return;
+    perfumeCatalog.splice(0, perfumeCatalog.length, ...overrides);
+    overrides.forEach(p => {
+      if (!p.image && PERFUME_IMAGES[p.id]) p.image = PERFUME_IMAGES[p.id];
+    });
+  } catch(e) {}
+})();
+
 // aliases للتوافق مع الـ HTML
 var getOldPriceLocal = getOldPrice;
 var discountPct      = getDiscountPct;

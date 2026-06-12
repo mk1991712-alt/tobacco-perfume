@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Tobacco Perfume</title>
+  <style>
+    :root {
+      --gold: #C9A84C; --gold-l: #E8C96D; --gold-d: #8B6914;
+      --gold-glow: rgba(201,168,76,0.14); --gold-border: rgba(201,168,76,0.25);
+      --bg: #080808; --bg-card: #111111; --bg-surface: #181818;
+      --bg-elevated: #1e1e1e; --bg-input: #141414;
+      --border: rgba(255,255,255,0.07);
+      --text: #EDE8DC; --text-2: #9A8A6A; --text-3: #504840;
+      --red: #E05252; --red-glow: rgba(224,82,82,0.14);
+      --green: #4CAF70; --green-glow: rgba(76,175,112,0.14);
+      --radius: 14px; --radius-sm: 8px;
+      --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; min-height: 100vh; }
+
+    /* ── Login Screen ── */
+    #login-screen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+    }
+    .login-box {
+      background: var(--bg-card); border: 1px solid var(--gold-border);
+      border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 380px;
+      box-shadow: 0 0 60px rgba(201,168,76,0.08);
+    }
+    .login-logo { font-size: 13px; letter-spacing: 3px; color: var(--gold); text-align: center; margin-bottom: 6px; }
+    .login-title { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 28px; }
+    .login-error { background: var(--red-glow); border: 1px solid var(--red); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; color: var(--red); margin-bottom: 16px; display: none; }
+
+    /* ── App Shell ── */
+    #app { display: none; }
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 58px; z-index: 100;
+      background: rgba(8,8,8,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px; gap: 12px;
+    }
+    .topbar-logo { font-size: 11px; letter-spacing: 2.5px; color: var(--gold); font-weight: 700; }
+    .topbar-title { font-size: 14px; color: var(--text-2); }
+    .topbar-spacer { flex: 1; }
+    .topbar-badge { font-size: 11px; background: var(--gold-glow); border: 1px solid var(--gold-border); color: var(--gold); padding: 3px 10px; border-radius: 20px; }
+
+    .sidebar {
+      position: fixed; top: 58px; right: 0; width: 220px; bottom: 0; z-index: 90;
+      background: var(--bg-card); border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 16px 0;
+      overflow-y: auto;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 11px 20px;
+      font-size: 14px; color: var(--text-2); cursor: pointer;
+      transition: all var(--transition); border-right: 3px solid transparent;
+      white-space: nowrap;
+    }
+    .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-item.active { color: var(--gold); border-right-color: var(--gold); background: var(--gold-glow); }
+    .nav-item .icon { font-size: 17px; width: 22px; text-align: center; flex-shrink: 0; }
+    .nav-sep { height: 1px; background: var(--border); margin: 8px 16px; }
+
+    .main-content {
+      margin-top: 58px; margin-left: 0; margin-right: 220px;
+      padding: 28px 24px; min-height: calc(100vh - 58px);
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+
+    /* ── Stats Cards ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px;
+    }
+    .stat-label { font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+    .stat-val { font-size: 26px; font-weight: 700; color: var(--gold); }
+    .stat-sub { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+
+    /* ── Toolbar ── */
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .search-input {
+      flex: 1; min-width: 200px; background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 9px 14px; color: var(--text);
+      font-size: 14px; outline: none; transition: border var(--transition);
+    }
+    .search-input:focus { border-color: var(--gold-border); }
+    .filter-select {
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text);
+      font-size: 13px; outline: none; cursor: pointer;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 50px; font-size: 13px;
+      font-weight: 600; cursor: pointer; border: none; transition: all var(--transition);
+    }
+    .btn-gold { background: var(--gold); color: #000; }
+    .btn-gold:hover { background: var(--gold-l); }
+    .btn-outline { background: transparent; border: 1px solid var(--gold-border); color: var(--gold); }
+    .btn-outline:hover { background: var(--gold-glow); }
+    .btn-red { background: var(--red-glow); border: 1px solid var(--red); color: var(--red); }
+    .btn-red:hover { background: rgba(224,82,82,0.25); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+    .btn-icon { padding: 7px 9px; border-radius: 8px; font-size: 14px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-2); cursor: pointer; transition: all var(--transition); }
+    .btn-icon:hover { border-color: var(--gold-border); color: var(--gold); }
+
+    /* ── Products Table ── */
+    .products-table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .products-table { width: 100%; border-collapse: collapse; }
+    .products-table th {
+      background: var(--bg-surface); padding: 12px 14px; text-align: right;
+      font-size: 12px; font-weight: 600; color: var(--text-2);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .products-table td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; vertical-align: middle; }
+    .products-table tr:last-child td { border-bottom: none; }
+    .products-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .prod-thumb { width: 36px; height: 44px; object-fit: contain; border-radius: 4px; background: var(--bg-surface); }
+    .prod-thumb-placeholder { width: 36px; height: 44px; background: var(--bg-surface); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-uni { background: rgba(201,168,76,0.15); color: var(--gold); }
+    .badge-men { background: rgba(100,150,255,0.15); color: #7EB3FF; }
+    .badge-women { background: rgba(255,100,180,0.15); color: #FF9DD6; }
+    .price-cell { color: var(--gold); font-weight: 700; }
+    .actions-cell { display: flex; gap: 6px; }
+
+    /* ── Form ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+    .form-input, .form-select, .form-textarea {
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text);
+      font-size: 13px; outline: none; transition: border var(--transition);
+      font-family: inherit;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold-border); }
+    .form-textarea { min-height: 80px; resize: vertical; }
+    .notes-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; visibility: hidden; transition: all var(--transition);
+    }
+    .modal-overlay.open { opacity: 1; visibility: visible; }
+    .modal-box {
+      background: var(--bg-card); border: 1px solid var(--gold-border);
+      border-radius: 18px; width: 100%; max-width: 620px;
+      max-height: 90vh; overflow-y: auto;
+      transform: scale(0.96); transition: transform var(--transition);
+    }
+    .modal-overlay.open .modal-box { transform: scale(1); }
+    .modal-header { display: flex; align-items: center; gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .modal-header-title { flex: 1; font-size: 16px; font-weight: 700; }
+    .modal-body { padding: 24px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--border); }
+
+    /* ── Confirm Dialog ── */
+    .confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1100;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; visibility: hidden; transition: all var(--transition);
+    }
+    .confirm-overlay.open { opacity: 1; visibility: visible; }
+    .confirm-box {
+      background: var(--bg-card); border: 1px solid rgba(224,82,82,0.3);
+      border-radius: 16px; padding: 28px; max-width: 360px; width: 100%;
+      text-align: center; transform: scale(0.96); transition: transform var(--transition);
+    }
+    .confirm-overlay.open .confirm-box { transform: scale(1); }
+    .confirm-icon { font-size: 36px; margin-bottom: 12px; }
+    .confirm-msg { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .confirm-sub { font-size: 13px; color: var(--text-2); margin-bottom: 22px; }
+    .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+    /* ── Password Change ── */
+    .pwd-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; max-width: 420px; }
+
+    /* ── Orders ── */
+    .order-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 10px; }
+    .order-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .order-id { font-size: 13px; font-weight: 700; color: var(--gold); }
+    .order-date { font-size: 12px; color: var(--text-3); flex: 1; }
+    .order-total { font-weight: 700; }
+    .order-body { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+    .order-empty { text-align: center; padding: 48px; color: var(--text-3); }
+
+    /* ── Toast ── */
+    #admin-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--bg-elevated); border: 1px solid var(--gold-border);
+      color: var(--text); padding: 12px 22px; border-radius: 50px;
+      font-size: 14px; z-index: 9999; transition: transform 0.3s ease; white-space: nowrap;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    #admin-toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      .sidebar { display: none; }
+      .main-content { margin-right: 0; padding: 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .notes-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .products-table td:nth-child(4), .products-table th:nth-child(4),
+      .products-table td:nth-child(5), .products-table th:nth-child(5) { display: none; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">TOBACCO PERFUME</div>
+    <div class="login-title">لوحة التحكم</div>
+    <div class="login-error" id="login-error">كلمة المرور غير صحيحة</div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">كلمة المرور</label>
+      <input type="password" id="login-pwd" class="form-input" placeholder="أدخل كلمة المرور" autocomplete="current-password">
+    </div>
+    <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="doLogin()">دخول</button>
+    <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-3)">كلمة المرور الافتراضية: <strong style="color:var(--text-2)">admin123</strong></p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP SHELL
+══════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-logo">TP</div>
+    <div class="topbar-title">Admin Panel</div>
+    <div class="topbar-spacer"></div>
+    <span class="topbar-badge" id="topbar-badge">34 منتج</span>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="logout()">خروج</button>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-item active" onclick="showPage('products')" id="nav-products">
+      <span class="icon">📦</span> المنتجات
+    </div>
+    <div class="nav-item" onclick="showPage('add')" id="nav-add">
+      <span class="icon">➕</span> إضافة منتج
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-item" onclick="showPage('orders')" id="nav-orders">
+      <span class="icon">🧾</span> الطلبات
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
+      <span class="icon">⚙️</span> الإعدادات
+    </div>
+    <div class="nav-item" onclick="window.open('index.html','_blank')">
+      <span class="icon">🌐</span> المتجر
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+
+    <!-- ── PRODUCTS PAGE ── -->
+    <div class="page active" id="page-products">
+      <div class="page-title">إدارة المنتجات</div>
+
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <div class="toolbar">
+        <input type="search" class="search-input" placeholder="ابحث بالاسم أو البراند..." id="prod-search" oninput="renderTable()">
+        <select class="filter-select" id="prod-filter" onchange="renderTable()">
+          <option value="">كل الأصناف</option>
+          <option value="unisex">يونيسكس</option>
+          <option value="men">رجالي</option>
+          <option value="women">نسائي</option>
+        </select>
+        <button class="btn btn-gold" onclick="showPage('add')">➕ إضافة منتج</button>
+        <button class="btn btn-outline" onclick="resetCatalog()" title="استعادة المنتجات الأصلية">↩ استعادة الأصل</button>
+      </div>
+
+      <div class="products-table-wrap">
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>الصورة</th>
+              <th>الاسم</th>
+              <th>البراند</th>
+              <th>الفئة</th>
+              <th>سعر 50ml</th>
+              <th>سعر 60ml</th>
+              <th>التقييم</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="products-tbody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:12px;color:var(--text-3);margin-top:10px" id="prod-count"></div>
+    </div>
+
+    <!-- ── ADD PRODUCT PAGE ── -->
+    <div class="page" id="page-add">
+      <div class="page-title">إضافة منتج جديد</div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+        <div id="add-product-form"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+          <button class="btn btn-outline" onclick="showPage('products')">إلغاء</button>
+          <button class="btn btn-gold" onclick="saveNewProduct()">💾 حفظ المنتج</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ORDERS PAGE ── -->
+    <div class="page" id="page-orders">
+      <div class="page-title">الطلبات</div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+        <input type="search" class="search-input" style="max-width:280px" placeholder="ابحث برقم الطلب أو الاسم..." id="order-search" oninput="renderOrders()">
+        <button class="btn btn-red btn-sm" onclick="clearOrders()">🗑 مسح كل الطلبات</button>
+      </div>
+      <div id="orders-list"></div>
+    </div>
+
+    <!-- ── SETTINGS PAGE ── -->
+    <div class="page" id="page-settings">
+      <div class="page-title">الإعدادات</div>
+      <div class="pwd-card">
+        <div style="font-size:15px;font-weight:700;margin-bottom:18px">🔐 تغيير كلمة المرور</div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label">كلمة المرور الحالية</label>
+          <input type="password" id="pwd-current" class="form-input" placeholder="••••••••">
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label">كلمة المرور الجديدة</label>
+          <input type="password" id="pwd-new" class="form-input" placeholder="على الأقل 6 أحرف">
+        </div>
+        <div class="form-group" style="margin-bottom:18px">
+          <label class="form-label">تأكيد كلمة المرور</label>
+          <input type="password" id="pwd-confirm" class="form-input" placeholder="••••••••">
+        </div>
+        <button class="btn btn-gold" onclick="changePwd()">حفظ</button>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════
+     EDIT MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-header-title" id="edit-modal-title">تعديل المنتج</div>
+      <button class="btn-icon" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body" id="edit-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeEditModal()">إلغاء</button>
+      <button class="btn btn-gold" onclick="saveEdit()">💾 حفظ التعديلات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     CONFIRM DIALOG
+══════════════════════════════════════ -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-msg" id="confirm-msg">هل أنت متأكد؟</div>
+    <div class="confirm-sub" id="confirm-sub">لا يمكن التراجع عن هذا الإجراء</div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline" onclick="closeConfirm()">إلغاء</button>
+      <button class="btn btn-red" id="confirm-ok-btn">حذف</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="admin-toast"></div>
+
+<script src="data.js"></script>
+<script>
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+const DEFAULT_PWD = 'admin123';
+
+function getStoredPwd() {
+  return localStorage.getItem('tp_admin_pwd') || DEFAULT_PWD;
+}
+
+function doLogin() {
+  const val = document.getElementById('login-pwd').value;
+  if (val === getStoredPwd()) {
+    sessionStorage.setItem('tp_admin_auth', '1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-pwd').value = '';
+  }
+}
+
+document.getElementById('login-pwd').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function logout() {
+  sessionStorage.removeItem('tp_admin_auth');
+  location.reload();
+}
+
+function changePwd() {
+  const cur = document.getElementById('pwd-current').value;
+  const nw  = document.getElementById('pwd-new').value;
+  const cf  = document.getElementById('pwd-confirm').value;
+  if (cur !== getStoredPwd()) { toast('كلمة المرور الحالية غير صحيحة ❌'); return; }
+  if (nw.length < 6)          { toast('كلمة المرور يجب أن تكون 6 أحرف على الأقل'); return; }
+  if (nw !== cf)               { toast('كلمتا المرور غير متطابقتان'); return; }
+  localStorage.setItem('tp_admin_pwd', nw);
+  document.getElementById('pwd-current').value = '';
+  document.getElementById('pwd-new').value = '';
+  document.getElementById('pwd-confirm').value = '';
+  toast('تم تغيير كلمة المرور بنجاح ✅');
+}
+
+// Auto-login check
+if (sessionStorage.getItem('tp_admin_auth') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  // initApp() called after DOMContentLoaded
+}
+
+// ═══════════════════════════════════════════
+// CATALOG STATE
+// ═══════════════════════════════════════════
+let catalog = [];
+
+function loadCatalog() {
+  const saved = localStorage.getItem('tp_admin_catalog');
+  if (saved) {
+    try {
+      catalog = JSON.parse(saved);
+      // re-attach images for any product missing them
+      catalog.forEach(p => {
+        if (!p.image && PERFUME_IMAGES[p.id]) p.image = PERFUME_IMAGES[p.id];
+      });
+      return;
+    } catch(e) {}
+  }
+  // Deep-clone the default catalog
+  catalog = JSON.parse(JSON.stringify(perfumeCatalog));
+}
+
+function saveCatalog() {
+  localStorage.setItem('tp_admin_catalog', JSON.stringify(catalog));
+  // Also update the live catalog so main site uses it
+  perfumeCatalog.splice(0, perfumeCatalog.length, ...catalog);
+  updateBadge();
+}
+
+function resetCatalog() {
+  openConfirm(
+    'استعادة المنتجات الأصلية',
+    'سيتم حذف كل التعديلات والعودة إلى الكتالوج الافتراضي',
+    () => {
+      localStorage.removeItem('tp_admin_catalog');
+      catalog = JSON.parse(JSON.stringify(perfumeCatalog));
+      saveCatalog();
+      renderTable();
+      renderStats();
+      toast('تم استعادة الكتالوج الأصلي ↩');
+    },
+    'استعادة'
+  );
+}
+
+function updateBadge() {
+  document.getElementById('topbar-badge').textContent = catalog.length + ' منتج';
+}
+
+// ═══════════════════════════════════════════
+// PAGES
+// ═══════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const navEl = document.getElementById('nav-' + name);
+  if (navEl) navEl.classList.add('active');
+
+  if (name === 'products') { renderTable(); renderStats(); }
+  if (name === 'add')      { renderAddForm(); }
+  if (name === 'orders')   { renderOrders(); }
+}
+
+// ═══════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════
+function renderStats() {
+  const total   = catalog.length;
+  const unisex  = catalog.filter(p => p.category === 'unisex').length;
+  const men     = catalog.filter(p => p.category === 'men').length;
+  const women   = catalog.filter(p => p.category === 'women').length;
+  const avgRat  = (catalog.reduce((s, p) => s + (p.rating || 0), 0) / total).toFixed(1);
+  const minP    = Math.min(...catalog.map(p => p.price50ml));
+  const maxP    = Math.max(...catalog.map(p => p.price50ml));
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">إجمالي المنتجات</div><div class="stat-val">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">يونيسكس</div><div class="stat-val">${unisex}</div></div>
+    <div class="stat-card"><div class="stat-label">رجالي</div><div class="stat-val">${men}</div></div>
+    <div class="stat-card"><div class="stat-label">نسائي</div><div class="stat-val">${women}</div></div>
+    <div class="stat-card"><div class="stat-label">متوسط التقييم</div><div class="stat-val">${avgRat}⭐</div></div>
+    <div class="stat-card"><div class="stat-label">نطاق السعر</div><div class="stat-val" style="font-size:18px">${minP}–${maxP}</div><div class="stat-sub">جنيه / 50ml</div></div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// PRODUCTS TABLE
+// ═══════════════════════════════════════════
+function renderTable() {
+  const q      = (document.getElementById('prod-search').value || '').toLowerCase();
+  const filter = document.getElementById('prod-filter').value;
+
+  const filtered = catalog.filter(p => {
+    const matchQ = !q || p.nameAr.includes(q) || (p.nameEn || '').toLowerCase().includes(q) || (p.brand || '').toLowerCase().includes(q);
+    const matchF = !filter || p.category === filter;
+    return matchQ && matchF;
+  });
+
+  document.getElementById('prod-count').textContent = `عرض ${filtered.length} من ${catalog.length} منتج`;
+
+  const catLabel = { unisex: 'يونيسكس', men: 'رجالي', women: 'نسائي' };
+  const catBadge = { unisex: 'badge-uni', men: 'badge-men', women: 'badge-women' };
+
+  document.getElementById('products-tbody').innerHTML = filtered.map(p => `
+    <tr>
+      <td>
+        ${p.image
+          ? `<img src="${p.image}" class="prod-thumb" onerror="this.style.opacity='0.3'">`
+          : `<div class="prod-thumb-placeholder">🧴</div>`}
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${p.nameAr}</div>
+        <div style="font-size:11px;color:var(--text-3)">${p.nameEn || ''}</div>
+      </td>
+      <td style="color:var(--text-2);font-size:12px">${p.brand || '—'}</td>
+      <td><span class="badge ${catBadge[p.category] || ''}">${catLabel[p.category] || p.category}</span></td>
+      <td class="price-cell">${p.price50ml} ج</td>
+      <td class="price-cell">${p.price60ml || '—'}</td>
+      <td style="color:var(--gold-l)">${p.rating ? '⭐ ' + p.rating : '—'}</td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn-icon" onclick="openEditModal(${p.id})" title="تعديل">✏️</button>
+          <button class="btn-icon" onclick="confirmDelete(${p.id})" title="حذف" style="color:var(--red);border-color:rgba(224,82,82,0.3)">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+// PRODUCT FORM TEMPLATE
+// ═══════════════════════════════════════════
+function productFormHTML(p = {}) {
+  const notes = p.notes || {};
+  return `
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">الاسم بالعربي *</label>
+        <input type="text" class="form-input" id="pf-nameAr" value="${esc(p.nameAr||'')}" placeholder="مثال: باكارات روج 540">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الاسم بالإنجليزي</label>
+        <input type="text" class="form-input" id="pf-nameEn" value="${esc(p.nameEn||'')}" placeholder="Baccarat Rouge 540">
+      </div>
+      <div class="form-group">
+        <label class="form-label">البراند</label>
+        <input type="text" class="form-input" id="pf-brand" value="${esc(p.brand||'')}" placeholder="Maison Francis Kurkdjian">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الفئة *</label>
+        <select class="form-select" id="pf-category">
+          <option value="unisex" ${p.category==='unisex'?'selected':''}>يونيسكس</option>
+          <option value="men"    ${p.category==='men'?'selected':''}>رجالي</option>
+          <option value="women"  ${p.category==='women'?'selected':''}>نسائي</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">سعر 50ml (جنيه) *</label>
+        <input type="number" class="form-input" id="pf-price50" value="${p.price50ml||''}" min="1" placeholder="300">
+      </div>
+      <div class="form-group">
+        <label class="form-label">سعر 60ml (جنيه)</label>
+        <input type="number" class="form-input" id="pf-price60" value="${p.price60ml||''}" min="1" placeholder="350">
+      </div>
+      <div class="form-group">
+        <label class="form-label">التقييم (1–5)</label>
+        <input type="number" class="form-input" id="pf-rating" value="${p.rating||''}" min="1" max="5" step="0.1" placeholder="4.5">
+      </div>
+      <div class="form-group">
+        <label class="form-label">رابط الصورة</label>
+        <input type="url" class="form-input" id="pf-image" value="${esc(p.image||'')}" placeholder="https://...">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">الوصف</label>
+        <textarea class="form-textarea" id="pf-desc" placeholder="وصف قصير للعطر...">${esc(p.description||'')}</textarea>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">النوتات</label>
+        <div class="notes-grid">
+          <div class="form-group">
+            <label class="form-label">🟡 القمة (Top)</label>
+            <input type="text" class="form-input" id="pf-top" value="${esc((notes.top||[]).join(', '))}" placeholder="bergamot, lemon">
+          </div>
+          <div class="form-group">
+            <label class="form-label">🩷 القلب (Heart)</label>
+            <input type="text" class="form-input" id="pf-heart" value="${esc((notes.heart||[]).join(', '))}" placeholder="rose, jasmine">
+          </div>
+          <div class="form-group">
+            <label class="form-label">🟫 القاعدة (Base)</label>
+            <input type="text" class="form-input" id="pf-base" value="${esc((notes.base||[]).join(', '))}" placeholder="musk, amber">
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function readProductForm() {
+  const splitNotes = v => v.split(',').map(s => s.trim()).filter(Boolean);
+  return {
+    nameAr:      document.getElementById('pf-nameAr').value.trim(),
+    nameEn:      document.getElementById('pf-nameEn').value.trim(),
+    brand:       document.getElementById('pf-brand').value.trim(),
+    category:    document.getElementById('pf-category').value,
+    price50ml:   parseInt(document.getElementById('pf-price50').value) || 0,
+    price60ml:   parseInt(document.getElementById('pf-price60').value) || 0,
+    rating:      parseFloat(document.getElementById('pf-rating').value) || 4.5,
+    image:       document.getElementById('pf-image').value.trim() || null,
+    description: document.getElementById('pf-desc').value.trim(),
+    notes: {
+      top:   splitNotes(document.getElementById('pf-top').value),
+      heart: splitNotes(document.getElementById('pf-heart').value),
+      base:  splitNotes(document.getElementById('pf-base').value),
+    }
+  };
+}
+
+// ═══════════════════════════════════════════
+// ADD PRODUCT
+// ═══════════════════════════════════════════
+function renderAddForm() {
+  document.getElementById('add-product-form').innerHTML = productFormHTML();
+}
+
+function saveNewProduct() {
+  const data = readProductForm();
+  if (!data.nameAr)     { toast('الاسم بالعربي مطلوب'); return; }
+  if (!data.price50ml)  { toast('سعر 50ml مطلوب'); return; }
+
+  // Generate unique ID
+  const maxId = catalog.reduce((m, p) => Math.max(m, p.id), 0);
+  const newId = maxId + 1;
+  data.id = newId;
+
+  catalog.push(data);
+  saveCatalog();
+  renderAddForm();
+  toast('✅ تم إضافة المنتج بنجاح (#' + newId + ')');
+  showPage('products');
+}
+
+// ═══════════════════════════════════════════
+// EDIT PRODUCT
+// ═══════════════════════════════════════════
+let editingId = null;
+
+function openEditModal(id) {
+  const p = catalog.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('edit-modal-title').textContent = 'تعديل: ' + p.nameAr;
+  document.getElementById('edit-modal-body').innerHTML = productFormHTML(p);
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editingId = null;
+}
+
+function saveEdit() {
+  if (editingId === null) return;
+  const updated = readProductForm();
+  if (!updated.nameAr)    { toast('الاسم بالعربي مطلوب'); return; }
+  if (!updated.price50ml) { toast('سعر 50ml مطلوب'); return; }
+
+  const idx = catalog.findIndex(p => p.id === editingId);
+  if (idx === -1) return;
+  catalog[idx] = { ...catalog[idx], ...updated };
+  saveCatalog();
+  closeEditModal();
+  renderTable();
+  renderStats();
+  toast('✅ تم حفظ التعديلات');
+}
+
+// Close modal on overlay click
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+
+// ═══════════════════════════════════════════
+// DELETE PRODUCT
+// ═══════════════════════════════════════════
+function confirmDelete(id) {
+  const p = catalog.find(x => x.id === id);
+  if (!p) return;
+  openConfirm(
+    'حذف المنتج',
+    `هل تريد حذف "${p.nameAr}"؟ لا يمكن التراجع.`,
+    () => {
+      catalog = catalog.filter(x => x.id !== id);
+      saveCatalog();
+      renderTable();
+      renderStats();
+      toast('🗑 تم حذف المنتج');
+    }
+  );
+}
+
+// ═══════════════════════════════════════════
+// CONFIRM DIALOG
+// ═══════════════════════════════════════════
+let confirmCallback = null;
+
+function openConfirm(msg, sub, onOk, okLabel = 'حذف') {
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-sub').textContent = sub;
+  document.getElementById('confirm-ok-btn').textContent = okLabel;
+  confirmCallback = onOk;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  confirmCallback = null;
+}
+
+document.getElementById('confirm-ok-btn').addEventListener('click', () => {
+  if (confirmCallback) confirmCallback();
+  closeConfirm();
+});
+
+document.getElementById('confirm-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+
+// ═══════════════════════════════════════════
+// ORDERS
+// ═══════════════════════════════════════════
+function renderOrders() {
+  const q = (document.getElementById('order-search').value || '').toLowerCase();
+  let orders = [];
+  try {
+    orders = JSON.parse(localStorage.getItem('tp_orders') || '[]');
+  } catch(e) {}
+
+  const filtered = orders.filter(o =>
+    !q ||
+    (o.orderId||'').toLowerCase().includes(q) ||
+    (o.name||'').toLowerCase().includes(q) ||
+    (o.phone||'').includes(q)
+  );
+
+  if (!filtered.length) {
+    document.getElementById('orders-list').innerHTML = `<div class="order-empty">لا توجد طلبات بعد</div>`;
+    return;
+  }
+
+  document.getElementById('orders-list').innerHTML = filtered.slice().reverse().map(o => `
+    <div class="order-card">
+      <div class="order-header">
+        <div class="order-id">#${o.orderId || '—'}</div>
+        <div class="order-date">${o.date || ''}</div>
+        <div class="order-total">${o.total || '—'} ج</div>
+      </div>
+      <div class="order-body">
+        <strong>${o.name || '—'}</strong> — ${o.phone || '—'}<br>
+        ${o.address || '—'}<br>
+        <span style="color:var(--text-3);font-size:12px">${o.items || '—'}</span><br>
+        <span style="font-size:12px">الدفع: ${o.payment || '—'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function clearOrders() {
+  openConfirm(
+    'مسح كل الطلبات',
+    'سيتم حذف جميع الطلبات المحفوظة محلياً نهائياً',
+    () => {
+      localStorage.removeItem('tp_orders');
+      renderOrders();
+      toast('تم مسح الطلبات 🗑');
+    }
+  );
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('admin-toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function initApp() {
+  loadCatalog();
+  renderStats();
+  renderTable();
+  updateBadge();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('tp_admin_auth') === '1') {
+    initApp();
+  }
+});
+</script>
+</body>
+</html>

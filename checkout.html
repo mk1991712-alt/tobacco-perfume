@@ -99,41 +99,39 @@
           طريقة الدفع
         </div>
 
-     <!-- الجزء الخاص بالدفع في ملف checkout.html -->
-<div class="payment-options-list">
-  <!-- خيار الدفع عند الاستلام -->
-  <div class="payment-option active" id="pay-cod" onclick="selectPayment('cod')">
-    <input type="radio" name="pay" value="cod" checked />
-    <div class="pay-radio"></div>
-    <div class="pay-icon">💵</div>
-    <div class="pay-info">
-      <h4>الدفع عند الاستلام</h4>
-      <p>ادفع كاش عند استلام طلبك</p>
-    </div>
-  </div>
+        <div class="payment-options-list">
 
-  <!-- خيار الفيزا المفعّل -->
-  <div class="payment-option" id="pay-card" onclick="selectPayment('card')">
-    <input type="radio" name="pay" value="card" />
-    <div class="pay-radio"></div>
-    <div class="pay-icon">💳</div>
-    <div class="pay-info">
-      <h4>بطاقة Visa / Mastercard</h4>
-      <p>دفع آمن عبر Paymob — مشفّر 100%</p>
-    </div>
-  </div>
+          <div class="payment-option active" id="pay-cod" onclick="selectPayment('cod')">
+            <input type="radio" name="pay" value="cod" checked />
+            <div class="pay-radio"></div>
+            <div class="pay-icon">💵</div>
+            <div class="pay-info">
+              <h4>الدفع عند الاستلام</h4>
+              <p>ادفع كاش عند استلام طلبك</p>
+            </div>
+          </div>
 
-  <!-- خيار التحويل -->
-  <div class="payment-option" id="pay-transfer" onclick="selectPayment('transfer')">
-    <input type="radio" name="pay" value="transfer" />
-    <div class="pay-radio"></div>
-    <div class="pay-icon">📱</div>
-    <div class="pay-info">
-      <h4>فودافون كاش / إنستاباي</h4>
-      <p>تحويل مسبق مع رفع صورة الإيصال</p>
-    </div>
-  </div>
-</div>
+          <div class="payment-option" id="pay-card" onclick="selectPayment('card')">
+            <input type="radio" name="pay" value="card" />
+            <div class="pay-radio"></div>
+            <div class="pay-icon">💳</div>
+            <div class="pay-info">
+              <h4>بطاقة Visa / Mastercard</h4>
+              <p>دفع آمن عبر Paymob — مشفّر 100%</p>
+            </div>
+          </div>
+
+          <div class="payment-option" id="pay-transfer" onclick="selectPayment('transfer')">
+            <input type="radio" name="pay" value="transfer" />
+            <div class="pay-radio"></div>
+            <div class="pay-icon">📱</div>
+            <div class="pay-info">
+              <h4>فودافون كاش / إنستاباي</h4>
+              <p>تحويل مسبق مع رفع صورة الإيصال</p>
+            </div>
+          </div>
+
+        </div>
 
         <!-- Transfer Details -->
         <div id="transfer-box" class="transfer-box mt-12" style="display:none">
