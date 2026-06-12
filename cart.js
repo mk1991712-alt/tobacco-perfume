@@ -43,5 +43,39 @@ function changeQty(key, delta) {
   saveCart(cart);
 }
 
+function addBundleToCart(bundle, btn) {
+  const cart = getCart();
+  const key  = 'bundle_' + bundle.id;
+  const ex   = cart.find(i => i.key === key);
+  if (ex) {
+    ex.qty++;
+  } else {
+    const bundleItems = bundle.productIds.map(pid => {
+      const p = typeof getPerfumeById === 'function' ? getPerfumeById(pid) : (perfumeCatalog || []).find(x => x.id === pid);
+      return { id: pid, nameAr: p ? p.nameAr : pid, size: bundle.size };
+    });
+    cart.push({
+      key,
+      type: 'bundle',
+      bundleId: bundle.id,
+      nameAr: bundle.title,
+      nameEn: 'Bundle',
+      category: 'unisex',
+      size: bundle.size,
+      price: bundle.bundlePrice,
+      qty: 1,
+      bundleItems
+    });
+  }
+  saveCart(cart);
+  if (typeof showToast === 'function') showToast('تمت إضافة الباندل للسلة 🎁');
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✅ تمت الإضافة';
+    btn.classList.add('added');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('added'); }, 1800);
+  }
+}
+
 // legacy alias
 function updateCartBadge() { if (typeof syncCartBadges === 'function') syncCartBadges(); }

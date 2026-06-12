@@ -304,12 +304,20 @@ const PERFUME_IMAGES = {
 // ربط الصور بالكاتالوج
 perfumeCatalog.forEach(p => { p.image = PERFUME_IMAGES[p.id] || null; });
 
-function getOldPrice(price) {
+function getOldPrice(price, p) {
+  // بدون خصم
+  if (p && p.customDiscount === 0) return null;
+  // خصم مخصص
+  if (p && typeof p.customDiscount === 'number' && p.customDiscount > 0)
+    return Math.round(price / (1 - p.customDiscount / 100) / 10) * 10;
+  // حساب تلقائي
   const map = { 250: 370, 300: 450, 330: 490, 350: 520, 400: 580 };
   return map[price] || Math.round(price * 1.45 / 10) * 10;
 }
 
-function getDiscountPct(price) {
+function getDiscountPct(price, p) {
+  if (p && p.customDiscount === 0) return 0;
+  if (p && typeof p.customDiscount === 'number' && p.customDiscount > 0) return p.customDiscount;
   const old = getOldPrice(price);
   return Math.round((1 - price / old) * 100);
 }

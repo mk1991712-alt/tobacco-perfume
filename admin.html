@@ -258,7 +258,7 @@
       <input type="password" id="login-pwd" class="form-input" placeholder="أدخل كلمة المرور" autocomplete="current-password">
     </div>
     <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="doLogin()">دخول</button>
-    <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-3)">كلمة المرور الافتراضية: <strong style="color:var(--text-2)">admin123</strong></p>
+    <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-3)"></p>
   </div>
 </div>
 
@@ -291,6 +291,12 @@
     <div class="nav-sep"></div>
     <div class="nav-item" onclick="showPage('orders')" id="nav-orders">
       <span class="icon">🧾</span> الطلبات
+    </div>
+    <div class="nav-item" onclick="showPage('vouchers')" id="nav-vouchers">
+      <span class="icon">🎟</span> الفواشر
+    </div>
+    <div class="nav-item" onclick="showPage('bundles')" id="nav-bundles">
+      <span class="icon">🎁</span> الباندلز
     </div>
     <div class="nav-sep"></div>
     <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
@@ -392,6 +398,112 @@
       <div id="orders-list"></div>
     </div>
 
+    <!-- ── VOUCHERS PAGE ── -->
+    <div class="page" id="page-vouchers">
+      <div class="page-title">الفواشر (Voucher Codes)</div>
+
+      <!-- Create Voucher -->
+      <div style="background:var(--bg-card);border:1px solid var(--gold-border);border-radius:var(--radius);padding:22px;margin-bottom:20px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--gold)">🎟 إنشاء فوشر جديد</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">الكود *</label>
+            <input type="text" class="form-input" id="vc-code" placeholder="مثال: TOBACCO20" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/\s/g,'')">
+          </div>
+          <div class="form-group">
+            <label class="form-label">نسبة الخصم % *</label>
+            <input type="number" class="form-input" id="vc-discount" placeholder="مثال: 15" min="1" max="90">
+          </div>
+          <div class="form-group">
+            <label class="form-label">عدد مرات الاستخدام *</label>
+            <input type="number" class="form-input" id="vc-uses" placeholder="مثال: 100" min="1">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn btn-gold" style="width:100%" onclick="createVoucher()">➕ إنشاء الفوشر</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vouchers List -->
+      <div class="products-table-wrap">
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>الكود</th>
+              <th>الخصم</th>
+              <th>الاستخدام</th>
+              <th>الحالة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="vouchers-tbody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:12px;color:var(--text-3);margin-top:10px" id="vouchers-count"></div>
+    </div>
+
+    <!-- ── BUNDLES PAGE ── -->
+    <div class="page" id="page-bundles">
+      <div class="page-title">الباندلز (Bundles)</div>
+
+      <!-- Create Bundle Form -->
+      <div style="background:var(--bg-card);border:1px solid var(--gold-border);border-radius:var(--radius);padding:22px;margin-bottom:20px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--gold)">🎁 إنشاء باندل جديد</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">اسم الباندل *</label>
+            <input type="text" class="form-input" id="bn-title" placeholder="مثال: ترايو الرجالي">
+          </div>
+          <div class="form-group">
+            <label class="form-label">سعر الباندل (جنيه) *</label>
+            <input type="number" class="form-input" id="bn-price" placeholder="مثال: 700" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">الحجم لكل عطر</label>
+            <select class="form-select" id="bn-size">
+              <option value="50">50 مل</option>
+              <option value="60">60 مل</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">وصف (اختياري)</label>
+            <input type="text" class="form-input" id="bn-desc" placeholder="وصف مختصر للباندل...">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">اختر المنتجات * (من 2 لـ 5 عطور)</label>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <select class="form-select" id="bn-prod-select" style="flex:1"></select>
+              <button class="btn btn-outline btn-sm" onclick="addBundleProduct()">+ إضافة</button>
+            </div>
+            <div id="bn-selected-chips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:38px;padding:8px;background:var(--bg-input);border-radius:var(--radius-sm);border:1px solid var(--border)">
+              <span id="bn-chips-empty" style="color:var(--text-3);font-size:12px;align-self:center">لم يتم اختيار أي منتج</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+          <button class="btn btn-gold" onclick="createBundle()">🎁 إنشاء الباندل</button>
+        </div>
+      </div>
+
+      <!-- Bundles List -->
+      <div class="products-table-wrap">
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>الاسم</th>
+              <th>المنتجات</th>
+              <th>سعر الباندل</th>
+              <th>الحجم</th>
+              <th>الحالة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="bundles-tbody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:12px;color:var(--text-3);margin-top:10px" id="bundles-count"></div>
+    </div>
+
     <!-- ── SETTINGS PAGE ── -->
     <div class="page" id="page-settings">
       <div class="page-title">الإعدادات</div>
@@ -456,7 +568,7 @@
 // ═══════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════
-const DEFAULT_PWD = 'admin123';
+const DEFAULT_PWD = 'Medhat@1122';
 
 function getStoredPwd() {
   return localStorage.getItem('tp_admin_pwd') || DEFAULT_PWD;
@@ -567,6 +679,8 @@ function showPage(name) {
   if (name === 'products') { renderTable(); renderStats(); }
   if (name === 'add')      { renderAddForm(); }
   if (name === 'orders')   { renderOrders(); }
+  if (name === 'vouchers') { renderVouchers(); }
+  if (name === 'bundles')  { populateBundleProdSelect(); renderBundles(); }
 }
 
 // ═══════════════════════════════════════════
@@ -758,6 +872,22 @@ function productFormHTML(p = {}) {
         <input type="number" class="form-input" id="pf-rating" value="${p.rating||''}" min="1" max="5" step="0.1" placeholder="4.5">
       </div>
       <div class="form-group">
+        <label class="form-label">نسبة الخصم</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="number" class="form-input" id="pf-discount"
+            value="${typeof p.customDiscount === 'number' && p.customDiscount > 0 ? p.customDiscount : ''}"
+            min="1" max="90" placeholder="تلقائي" style="width:110px"
+            ${p.customDiscount === 0 ? 'disabled' : ''}>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--text-2);white-space:nowrap;user-select:none">
+            <input type="checkbox" id="pf-no-discount"
+              ${p.customDiscount === 0 ? 'checked' : ''}
+              onchange="document.getElementById('pf-discount').disabled=this.checked; if(this.checked) document.getElementById('pf-discount').value=''">
+            بدون خصم
+          </label>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:5px">اتركه فارغاً للحساب التلقائي · علّم "بدون خصم" لإخفاء الخصم نهائياً</div>
+      </div>
+      <div class="form-group">
         <label class="form-label">صورة المنتج</label>
         <div class="img-picker-wrap">
           <label class="img-picker-btn" for="pf-image-file">📷 اختر صورة</label>
@@ -817,6 +947,11 @@ function clearImage() {
 
 function readProductForm() {
   const splitNotes = v => v.split(',').map(s => s.trim()).filter(Boolean);
+  const noDiscount  = document.getElementById('pf-no-discount').checked;
+  const discVal     = document.getElementById('pf-discount').value;
+  const customDiscount = noDiscount ? 0
+                       : discVal !== '' ? parseInt(discVal)
+                       : undefined;
   return {
     nameAr:      document.getElementById('pf-nameAr').value.trim(),
     nameEn:      document.getElementById('pf-nameEn').value.trim(),
@@ -827,6 +962,7 @@ function readProductForm() {
     rating:      parseFloat(document.getElementById('pf-rating').value) || 4.5,
     image:       document.getElementById('pf-image').value.trim() || null,
     description: document.getElementById('pf-desc').value.trim(),
+    customDiscount,
     notes: {
       top:   splitNotes(document.getElementById('pf-top').value),
       heart: splitNotes(document.getElementById('pf-heart').value),
@@ -1013,6 +1149,254 @@ function toast(msg) {
 // ═══════════════════════════════════════════
 function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════════
+// VOUCHERS
+// ═══════════════════════════════════════════
+function getVouchers() {
+  try { return JSON.parse(localStorage.getItem('tp_vouchers') || '[]'); } catch(e) { return []; }
+}
+function saveVouchers(list) { localStorage.setItem('tp_vouchers', JSON.stringify(list)); }
+
+function createVoucher() {
+  const code     = document.getElementById('vc-code').value.trim().toUpperCase();
+  const discount = parseInt(document.getElementById('vc-discount').value);
+  const maxUses  = parseInt(document.getElementById('vc-uses').value);
+
+  if (!code)              { toast('اكتب كود الفوشر'); return; }
+  if (!discount || discount < 1 || discount > 90) { toast('نسبة الخصم يجب أن تكون بين 1 و 90'); return; }
+  if (!maxUses || maxUses < 1)  { toast('عدد مرات الاستخدام يجب أن يكون 1 على الأقل'); return; }
+
+  const vouchers = getVouchers();
+  if (vouchers.find(v => v.code === code)) { toast('❌ الكود ده موجود بالفعل'); return; }
+
+  vouchers.push({
+    id:        'v_' + Date.now(),
+    code,
+    discount,
+    maxUses,
+    usedCount: 0,
+    active:    true,
+    createdAt: new Date().toLocaleDateString('ar-EG')
+  });
+  saveVouchers(vouchers);
+
+  document.getElementById('vc-code').value = '';
+  document.getElementById('vc-discount').value = '';
+  document.getElementById('vc-uses').value = '';
+  renderVouchers();
+  toast('✅ تم إنشاء الفوشر ' + code);
+}
+
+function toggleVoucher(id) {
+  const list = getVouchers();
+  const v = list.find(x => x.id === id);
+  if (!v) return;
+  v.active = !v.active;
+  saveVouchers(list);
+  renderVouchers();
+  toast(v.active ? '✅ تم تفعيل الفوشر' : '⏸ تم إيقاف الفوشر');
+}
+
+function deleteVoucher(id) {
+  const v = getVouchers().find(x => x.id === id);
+  if (!v) return;
+  openConfirm('حذف الفوشر', `هل تريد حذف الكود "${v.code}"؟`, () => {
+    saveVouchers(getVouchers().filter(x => x.id !== id));
+    renderVouchers();
+    toast('🗑 تم حذف الفوشر');
+  });
+}
+
+function editVoucherUses(id) {
+  const list = getVouchers();
+  const v = list.find(x => x.id === id);
+  if (!v) return;
+  const newMax = prompt('عدد مرات الاستخدام الجديد:', v.maxUses);
+  if (newMax === null) return;
+  const n = parseInt(newMax);
+  if (!n || n < v.usedCount) { toast('العدد يجب أن يكون أكبر من عدد الاستخدامات الحالية (' + v.usedCount + ')'); return; }
+  v.maxUses = n;
+  saveVouchers(list);
+  renderVouchers();
+  toast('✅ تم تحديث عدد الاستخدامات');
+}
+
+function renderVouchers() {
+  const list = getVouchers();
+  document.getElementById('vouchers-count').textContent = list.length + ' فوشر';
+
+  if (!list.length) {
+    document.getElementById('vouchers-tbody').innerHTML = `
+      <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-3)">لا توجد فواشر بعد</td></tr>`;
+    return;
+  }
+
+  document.getElementById('vouchers-tbody').innerHTML = list.map(v => {
+    const remaining = v.maxUses - v.usedCount;
+    const pct       = Math.round((v.usedCount / v.maxUses) * 100);
+    const expired   = remaining <= 0;
+    const statusColor = !v.active ? 'var(--text-3)' : expired ? 'var(--red)' : 'var(--green)';
+    const statusText  = !v.active ? 'موقوف' : expired ? 'منتهي' : 'نشط';
+    return `<tr>
+      <td>
+        <span style="font-family:monospace;font-size:14px;font-weight:800;color:var(--gold);letter-spacing:1px">${v.code}</span>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px">${v.createdAt}</div>
+      </td>
+      <td><span style="color:var(--gold-l);font-weight:800;font-size:15px">${v.discount}%</span></td>
+      <td>
+        <div style="font-size:13px"><strong>${v.usedCount}</strong><span style="color:var(--text-3)"> / ${v.maxUses}</span></div>
+        <div style="margin-top:4px;height:4px;background:var(--border);border-radius:2px;width:80px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(pct,100)}%;background:${expired ? 'var(--red)' : 'var(--gold)'};border-radius:2px"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px">${remaining > 0 ? remaining + ' متبقي' : 'انتهت الاستخدامات'}</div>
+      </td>
+      <td><span style="color:${statusColor};font-weight:700;font-size:12px">${statusText}</span></td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn-icon" onclick="toggleVoucher('${v.id}')" title="${v.active ? 'إيقاف' : 'تفعيل'}">${v.active ? '⏸' : '▶️'}</button>
+          <button class="btn-icon" onclick="editVoucherUses('${v.id}')" title="تعديل عدد الاستخدامات">✏️</button>
+          <button class="btn-icon" onclick="deleteVoucher('${v.id}')" title="حذف" style="color:var(--red);border-color:rgba(224,82,82,0.3)">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// BUNDLES
+// ═══════════════════════════════════════════
+let selectedBundleProds = []; // array of product ids
+
+function getBundles() {
+  try { return JSON.parse(localStorage.getItem('tp_bundles') || '[]'); } catch(e) { return []; }
+}
+function saveBundles(list) { localStorage.setItem('tp_bundles', JSON.stringify(list)); }
+
+function populateBundleProdSelect() {
+  const sel = document.getElementById('bn-prod-select');
+  if (!sel) return;
+  sel.innerHTML = catalog.map(p =>
+    `<option value="${p.id}">${p.nameAr} (${p.price50ml} ج)</option>`
+  ).join('');
+}
+
+function addBundleProduct() {
+  const sel = document.getElementById('bn-prod-select');
+  const id  = parseInt(sel.value);
+  if (!id) return;
+  if (selectedBundleProds.includes(id)) { toast('هذا المنتج مضاف بالفعل'); return; }
+  if (selectedBundleProds.length >= 5)  { toast('الحد الأقصى 5 منتجات'); return; }
+  selectedBundleProds.push(id);
+  renderBundleChips();
+}
+
+function removeBundleProduct(id) {
+  selectedBundleProds = selectedBundleProds.filter(x => x !== id);
+  renderBundleChips();
+}
+
+function renderBundleChips() {
+  const container = document.getElementById('bn-selected-chips');
+  const empty     = document.getElementById('bn-chips-empty');
+  if (!selectedBundleProds.length) {
+    container.innerHTML = '<span id="bn-chips-empty" style="color:var(--text-3);font-size:12px;align-self:center">لم يتم اختيار أي منتج</span>';
+    return;
+  }
+  container.innerHTML = selectedBundleProds.map(id => {
+    const p = catalog.find(x => x.id === id);
+    const name = p ? p.nameAr : id;
+    return `<span class="prod-chip">${name}<button onclick="removeBundleProduct(${id})" title="إزالة">✕</button></span>`;
+  }).join('');
+}
+
+function createBundle() {
+  const title = document.getElementById('bn-title').value.trim();
+  const price = parseInt(document.getElementById('bn-price').value);
+  const size  = document.getElementById('bn-size').value;
+  const desc  = document.getElementById('bn-desc').value.trim();
+
+  if (!title)                            { toast('اكتب اسم الباندل'); return; }
+  if (!price || price < 1)               { toast('اكتب سعر الباندل'); return; }
+  if (selectedBundleProds.length < 2)    { toast('أضف منتجين على الأقل'); return; }
+
+  const list = getBundles();
+  list.push({
+    id:         'b_' + Date.now(),
+    title,
+    description: desc,
+    productIds: [...selectedBundleProds],
+    size,
+    bundlePrice: price,
+    active:     true,
+    createdAt:  new Date().toLocaleDateString('ar-EG')
+  });
+  saveBundles(list);
+
+  document.getElementById('bn-title').value = '';
+  document.getElementById('bn-price').value = '';
+  document.getElementById('bn-desc').value  = '';
+  selectedBundleProds = [];
+  renderBundleChips();
+  renderBundles();
+  toast('✅ تم إنشاء الباندل: ' + title);
+}
+
+function toggleBundle(id) {
+  const list = getBundles();
+  const b = list.find(x => x.id === id);
+  if (!b) return;
+  b.active = !b.active;
+  saveBundles(list);
+  renderBundles();
+  toast(b.active ? '✅ تم تفعيل الباندل' : '⏸ تم إيقاف الباندل');
+}
+
+function deleteBundle(id) {
+  const b = getBundles().find(x => x.id === id);
+  if (!b) return;
+  openConfirm('حذف الباندل', `هل تريد حذف "${b.title}"؟`, () => {
+    saveBundles(getBundles().filter(x => x.id !== id));
+    renderBundles();
+    toast('🗑 تم حذف الباندل');
+  });
+}
+
+function renderBundles() {
+  const list = getBundles();
+  document.getElementById('bundles-count').textContent = list.length + ' باندل';
+
+  if (!list.length) {
+    document.getElementById('bundles-tbody').innerHTML =
+      `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-3)">لا توجد باندلز بعد</td></tr>`;
+    return;
+  }
+
+  document.getElementById('bundles-tbody').innerHTML = list.map(b => {
+    const prodNames = b.productIds.map(id => {
+      const p = catalog.find(x => x.id === id);
+      return p ? p.nameAr : id;
+    }).join(' + ');
+    const statusColor = b.active ? 'var(--green)' : 'var(--text-3)';
+    return `<tr>
+      <td>
+        <div style="font-weight:700">${b.title}</div>
+        ${b.description ? `<div style="font-size:11px;color:var(--text-3)">${b.description}</div>` : ''}
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px">${b.createdAt}</div>
+      </td>
+      <td style="font-size:12px;color:var(--text-2);max-width:200px">${prodNames}</td>
+      <td class="price-cell">${b.bundlePrice} ج</td>
+      <td style="color:var(--text-2)">${b.size} مل</td>
+      <td><span style="color:${statusColor};font-weight:700;font-size:12px">${b.active ? 'نشط' : 'موقوف'}</span></td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn-icon" onclick="toggleBundle('${b.id}')" title="${b.active ? 'إيقاف' : 'تفعيل'}">${b.active ? '⏸' : '▶️'}</button>
+          <button class="btn-icon" onclick="deleteBundle('${b.id}')" title="حذف" style="color:var(--red);border-color:rgba(224,82,82,0.3)">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════════

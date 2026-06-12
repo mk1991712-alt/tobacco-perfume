@@ -32,12 +32,8 @@ function renderStarsRow(rating) {
 }
 
 /* ---- OLD PRICE / DISCOUNT ---- */
-function getOldPriceLocal(price) {
-  return ({ 250: 370, 300: 450, 330: 490, 350: 520, 400: 580 })[price] || Math.round(price * 1.45 / 10) * 10;
-}
-function discountPct(price) {
-  return Math.round((1 - price / getOldPriceLocal(price)) * 100);
-}
+function getOldPriceLocal(price, p) { return getOldPrice(price, p); }
+function discountPct(price, p)      { return getDiscountPct(price, p); }
 
 /* ---- REVIEWS (localStorage) ---- */
 function getReviews(id) {
@@ -64,6 +60,29 @@ function showToast(msg, emoji = '✅') {
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
+
+/* ---- THEME TOGGLE ---- */
+function initTheme() {
+  const saved = localStorage.getItem('tp_theme') || 'dark';
+  if (saved === 'light') document.body.classList.add('light');
+
+  // Inject toggle button into .top-bar-actions
+  const actions = document.querySelector('.top-bar-actions');
+  if (!actions) return;
+  const btn = document.createElement('button');
+  btn.className = 'theme-toggle-btn';
+  btn.title = 'تغيير المظهر';
+  btn.setAttribute('aria-label', 'تغيير المظهر');
+  btn.textContent = saved === 'light' ? '🌙' : '🌞';
+  btn.addEventListener('click', () => {
+    const isLight = document.body.classList.toggle('light');
+    localStorage.setItem('tp_theme', isLight ? 'light' : 'dark');
+    btn.textContent = isLight ? '🌙' : '🌞';
+  });
+  actions.prepend(btn);
+}
+
+document.addEventListener('DOMContentLoaded', initTheme);
 
 /* ---- CART BADGE SYNC ---- */
 function syncCartBadges() {
@@ -231,8 +250,8 @@ function renderModalContent(p) {
   const reviews = getReviews(p.id);
   const selSize = _modalSelectedSize;
   const price = selSize === '50' ? p.price50ml : p.price60ml;
-  const oldP = getOldPriceLocal(price);
-  const disc = discountPct(price);
+  const disc  = discountPct(price, p);
+  const oldP  = disc > 0 ? getOldPriceLocal(price, p) : null;
   const catLabel = { men: 'رجالي', women: 'نسائي', unisex: 'يونيسكس' }[p.category];
 
   const avgRating = reviews.length
@@ -278,8 +297,8 @@ function renderModalContent(p) {
     <!-- Price -->
     <div class="modal-price-row">
       <span class="modal-price-new" id="modal-price-new">${price} جنيه</span>
-      <span class="modal-price-old" id="modal-price-old">${oldP} جنيه</span>
-      <span class="modal-discount">-${disc}%</span>
+      ${oldP ? `<span class="modal-price-old" id="modal-price-old">${oldP} جنيه</span>` : `<span class="modal-price-old" id="modal-price-old" style="display:none"></span>`}
+      ${disc > 0 ? `<span class="modal-discount" id="modal-disc-badge">-${disc}%</span>` : `<span class="modal-discount" id="modal-disc-badge" style="display:none"></span>`}
     </div>
 
     <!-- Add Button -->
@@ -354,13 +373,17 @@ function selectModalSize(size) {
   if (!p) return;
   _modalSelectedSize = String(size);
   const price = size === 50 ? p.price50ml : p.price60ml;
-  const old = getOldPriceLocal(price);
+  const disc  = discountPct(price, p);
+  const old   = disc > 0 ? getOldPriceLocal(price, p) : null;
 
   document.querySelectorAll('.modal-size-btn').forEach(b => b.classList.remove('active'));
   event.currentTarget.classList.add('active');
 
   document.getElementById('modal-price-new').textContent = price + ' جنيه';
-  document.getElementById('modal-price-old').textContent = old + ' جنيه';
+  const oldEl  = document.getElementById('modal-price-old');
+  const discEl = document.getElementById('modal-disc-badge');
+  if (oldEl)  { oldEl.textContent  = old ? old + ' جنيه' : ''; oldEl.style.display  = old  ? '' : 'none'; }
+  if (discEl) { discEl.textContent = disc > 0 ? '-' + disc + '%' : ''; discEl.style.display = disc > 0 ? '' : 'none'; }
 }
 
 function modalAddToCart() {
@@ -407,6 +430,30 @@ function submitReview(id) {
 
 /* ---- INIT KEYBOARD CLOSE ---- */
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeSearch(); } });
+
+/* ---- SCROLL REVEAL ---- */
+(function initReveal() {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        e.target.style.animationDelay = (i * 0.06) + 's';
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  function observeAll() {
+    document.querySelectorAll('.product-card:not(.visible), .form-card:not(.visible), .promo-strip:not(.visible), .stat-card:not(.visible)').forEach(el => {
+      el.classList.add('reveal');
+      obs.observe(el);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', observeAll);
+  else observeAll();
+  // re-run after dynamic renders
+  window._revealObserver = obs;
+  window._revealScan = observeAll;
+})();
 
 /* ---- VISITOR TRACKING ---- */
 (function trackVisit() {

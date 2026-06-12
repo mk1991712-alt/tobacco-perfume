@@ -87,26 +87,53 @@
     const count = getCartCount();
     document.getElementById('cart-subtitle').textContent = count + ' عنصر في سلتك';
 
-    list.innerHTML = cart.map(item => `
-      <div class="cart-item" id="ci-${item.key.replace(/-/g,'_')}">
-        <div class="cart-item-thumb ${item.category || 'unisex'}">${catEmoji[item.category || 'unisex'] || '✨'}</div>
-        <div class="cart-item-info">
-          <div class="cart-item-name">${item.nameAr}</div>
-          <div class="cart-item-sub">${item.nameEn}${item.brand ? ' · ' + item.brand : ''} · ${item.size} مل</div>
-          <div class="cart-item-price">${item.price * item.qty} جنيه</div>
-        </div>
-        <div class="cart-qty-row">
-          <div class="qty-ctrl">
-            <button onclick="deltaQty('${item.key}', -1)">−</button>
-            <span class="qty-num">${item.qty}</span>
-            <button onclick="deltaQty('${item.key}', 1)">+</button>
+    list.innerHTML = cart.map(item => {
+      if (item.type === 'bundle') {
+        const subItems = (item.bundleItems || []).map(bi =>
+          `<span style="font-size:11px;color:var(--text-3)">${bi.nameAr}</span>`
+        ).join('<span style="color:var(--text-3);margin:0 4px">+</span>');
+        return `
+          <div class="cart-item" id="ci-${item.key.replace(/-/g,'_')}">
+            <div class="cart-item-thumb unisex" style="font-size:22px">🎁</div>
+            <div class="cart-item-info">
+              <div style="display:inline-block;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.25);border-radius:50px;padding:1px 8px;font-size:10px;color:var(--gold);margin-bottom:4px">باندل خاص</div>
+              <div class="cart-item-name">${item.nameAr}</div>
+              <div class="cart-item-sub">${subItems}</div>
+              <div class="cart-item-sub">${item.size} مل لكل عطر</div>
+              <div class="cart-item-price">${item.price * item.qty} جنيه</div>
+            </div>
+            <div class="cart-qty-row">
+              <div class="qty-ctrl">
+                <button onclick="deltaQty('${item.key}', -1)">−</button>
+                <span class="qty-num">${item.qty}</span>
+                <button onclick="deltaQty('${item.key}', 1)">+</button>
+              </div>
+              <button class="remove-item-btn" onclick="removeItem('${item.key}')">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>`;
+      }
+      return `
+        <div class="cart-item" id="ci-${item.key.replace(/-/g,'_')}">
+          <div class="cart-item-thumb ${item.category || 'unisex'}">${catEmoji[item.category || 'unisex'] || '✨'}</div>
+          <div class="cart-item-info">
+            <div class="cart-item-name">${item.nameAr}</div>
+            <div class="cart-item-sub">${item.nameEn}${item.brand ? ' · ' + item.brand : ''} · ${item.size} مل</div>
+            <div class="cart-item-price">${item.price * item.qty} جنيه</div>
           </div>
-          <button class="remove-item-btn" onclick="removeItem('${item.key}')">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-      </div>
-    `).join('');
+          <div class="cart-qty-row">
+            <div class="qty-ctrl">
+              <button onclick="deltaQty('${item.key}', -1)">−</button>
+              <span class="qty-num">${item.qty}</span>
+              <button onclick="deltaQty('${item.key}', 1)">+</button>
+            </div>
+            <button class="remove-item-btn" onclick="removeItem('${item.key}')">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>`;
+    }).join('');
 
     document.getElementById('s-count').textContent = count;
     document.getElementById('s-total').textContent = getCartTotal() + ' جنيه';

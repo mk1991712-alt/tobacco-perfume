@@ -69,6 +69,18 @@
   </div>
 </div>
 
+<!-- ===== BUNDLES CAROUSEL ===== -->
+<div id="bundles-section" class="bundle-section" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px">
+    <h2 class="section-title" style="margin-bottom:0">عروض <span>الباندل</span></h2>
+    <span style="font-size:11px;color:var(--text-3)">مجموعات بأسعار خاصة 🎁</span>
+  </div>
+  <div class="bundle-viewport" id="bundle-viewport">
+    <div class="bundle-track" id="bundle-track"></div>
+  </div>
+  <div class="bundle-dots" id="bundle-dots"></div>
+</div>
+
 <!-- ===== CATEGORIES ===== -->
 <div class="section-gap">
   <div class="section-header">
@@ -138,15 +150,15 @@
   function buildCard(p) {
     const defaultSize = p.price50ml ? '50' : '60';
     const defaultPrice = defaultSize === '50' ? p.price50ml : p.price60ml;
-    const old = getOldPriceLocal(defaultPrice);
-    const disc = discountPct(defaultPrice);
+    const disc = discountPct(defaultPrice, p);
+    const old  = disc > 0 ? getOldPriceLocal(defaultPrice, p) : null;
     return `
       <div class="product-card" onclick="openModal(${p.id})">
         <div class="card-thumb ${p.category}">
           <div class="card-thumb-bg"></div>
           <div class="bottle-wrap">${p.image ? `<img src="${p.image}" class="bottle-img" alt="${p.nameEn}" loading="lazy" onerror="this.style.opacity='0'">` : bottleSVG()}</div>
           <div class="card-brand-label">${p.brand || p.nameEn}</div>
-          <div class="discount-badge">-${disc}%</div>
+          ${disc > 0 ? `<div class="discount-badge">-${disc}%</div>` : ''}
         </div>
         <div class="card-body">
           <div class="card-stars">
@@ -161,7 +173,7 @@
           </div>
           <div class="card-price-row">
             <span class="price-new" id="price-${p.id}">${defaultPrice} جنيه</span>
-            <span class="price-old" id="old-${p.id}">${old} جنيه</span>
+            ${old ? `<span class="price-old" id="old-${p.id}">${old} جنيه</span>` : `<span class="price-old" id="old-${p.id}" style="display:none"></span>`}
           </div>
           <button class="card-add-btn" onclick="event.stopPropagation(); addToCartFromCard(${p.id}, this)">+ أضف للسلة</button>
           <div class="bottle-notice">
@@ -175,10 +187,13 @@
   function selectSize(btn, id) {
     btn.closest('.card-sizes').querySelectorAll('.size-pill').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    const p = getPerfumeById(id);
+    const p     = getPerfumeById(id);
     const price = btn.dataset.size === '50' ? p.price50ml : p.price60ml;
+    const disc  = discountPct(price, p);
+    const old   = disc > 0 ? getOldPriceLocal(price, p) : null;
     document.getElementById('price-' + id).textContent = price + ' جنيه';
-    document.getElementById('old-' + id).textContent = getOldPriceLocal(price) + ' جنيه';
+    const oldEl = document.getElementById('old-' + id);
+    if (oldEl) { oldEl.textContent = old ? old + ' جنيه' : ''; oldEl.style.display = old ? '' : 'none'; }
   }
 
   // Best Sellers
@@ -192,6 +207,100 @@
   document.getElementById('new-grid').innerHTML = newIds.map(id => {
     const p = getPerfumeById(id); return p ? buildCard(p) : '';
   }).join('');
+
+  // ── Bundle Carousel ──
+  (function initBundles() {
+    let bundles = [];
+    try { bundles = JSON.parse(localStorage.getItem('tp_bundles') || '[]').filter(b => b.active); } catch(e) {}
+    if (!bundles.length) return;
+
+    document.getElementById('bundles-section').style.display = 'block';
+
+    function computeOriginalPrice(b) {
+      return b.productIds.reduce((sum, pid) => {
+        const p = getPerfumeById(pid);
+        if (!p) return sum;
+        const price = b.size === '60' && p.price60ml ? p.price60ml : (p.price50ml || 0);
+        return sum + price;
+      }, 0);
+    }
+
+    const track = document.getElementById('bundle-track');
+    const dotsEl = document.getElementById('bundle-dots');
+    let current = 0;
+    let autoTimer;
+
+    track.innerHTML = bundles.map((b, i) => {
+      const origPrice = computeOriginalPrice(b);
+      const disc = origPrice > b.bundlePrice ? Math.round((1 - b.bundlePrice / origPrice) * 100) : 0;
+
+      const prodsHTML = b.productIds.map((pid, pi) => {
+        const p = getPerfumeById(pid);
+        const imgTag = p && p.image
+          ? `<img src="${p.image}" alt="${p ? p.nameAr : ''}" onerror="this.style.opacity='0.2'">`
+          : `<span style="font-size:28px">🧴</span>`;
+        return `
+          ${pi > 0 ? '<span class="bundle-plus">+</span>' : ''}
+          <div class="bundle-prod-item">
+            <div class="bundle-prod-img-wrap">${imgTag}</div>
+            <div class="bundle-prod-name">${p ? p.nameAr : ''}</div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="bundle-card">
+          <div class="bundle-top">
+            <span class="bundle-badge">🎁 باندل خاص</span>
+            ${disc > 0 ? `<span class="bundle-disc-badge">وفّر ${disc}%</span>` : ''}
+          </div>
+          <div class="bundle-title">${b.title}</div>
+          ${b.description ? `<div class="bundle-desc">${b.description}</div>` : ''}
+          <div class="bundle-products">${prodsHTML}</div>
+          <div class="bundle-price-row">
+            <span class="bundle-price-new">${b.bundlePrice} جنيه</span>
+            ${origPrice > b.bundlePrice ? `<span class="bundle-price-old">${origPrice} جنيه</span>` : ''}
+            <span class="bundle-size-tag">${b.size} مل × ${b.productIds.length}</span>
+          </div>
+          <button class="bundle-add-btn" onclick="handleBundleAdd(this, '${b.id}')">🎁 أضف الباندل للسلة</button>
+        </div>`;
+    }).join('');
+
+    dotsEl.innerHTML = bundles.map((_, i) =>
+      `<div class="bundle-dot${i===0?' active':''}" onclick="goToBundle(${i})"></div>`
+    ).join('');
+
+    function goToBundle(idx) {
+      current = (idx + bundles.length) % bundles.length;
+      track.style.transform = `translateX(${current * 100}%)`;
+      dotsEl.querySelectorAll('.bundle-dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    }
+
+    function nextBundle() { goToBundle(current + 1); }
+    function startAuto()  { autoTimer = setInterval(nextBundle, 5000); }
+    function stopAuto()   { clearInterval(autoTimer); }
+
+    if (bundles.length > 1) {
+      startAuto();
+      document.getElementById('bundle-viewport').addEventListener('mouseenter', stopAuto);
+      document.getElementById('bundle-viewport').addEventListener('mouseleave', startAuto);
+
+      // Touch swipe
+      let touchX = 0;
+      document.getElementById('bundle-viewport').addEventListener('touchstart', e => { touchX = e.touches[0].clientX; stopAuto(); }, { passive: true });
+      document.getElementById('bundle-viewport').addEventListener('touchend', e => {
+        const dx = touchX - e.changedTouches[0].clientX;
+        if (Math.abs(dx) > 40) goToBundle(dx > 0 ? current + 1 : current - 1);
+        startAuto();
+      }, { passive: true });
+    }
+  })();
+
+  window.handleBundleAdd = function(btn, bundleId) {
+    let bundles = [];
+    try { bundles = JSON.parse(localStorage.getItem('tp_bundles') || '[]'); } catch(e) {}
+    const b = bundles.find(x => x.id === bundleId);
+    if (b) addBundleToCart(b, btn);
+  };
 
   syncCartBadges();
 </script>

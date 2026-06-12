@@ -44,9 +44,22 @@
           ملخص الطلب
         </div>
         <div id="order-items-list"></div>
-        <div class="checkout-total-row">
-          <span>الإجمالي</span>
-          <span id="checkout-total">0 جنيه</span>
+        <div class="checkout-total-row" style="border-top:1px solid rgba(255,255,255,0.06);padding-top:10px">
+          <span>المنتجات</span>
+          <span id="checkout-subtotal">0 جنيه</span>
+        </div>
+        <div class="checkout-total-row" id="shipping-row" style="color:var(--text-2);font-size:13px">
+          <span>🚚 التوصيل</span>
+          <span id="checkout-shipping">— اختر العنوان</span>
+        </div>
+        <div id="shipping-note" style="font-size:11px;color:var(--gold);background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:8px 10px;margin:6px 0;display:none;direction:rtl"></div>
+        <div class="checkout-total-row" id="voucher-discount-row" style="color:var(--green);font-size:13px;display:none">
+          <span id="voucher-discount-label">🎟 خصم الفوشر</span>
+          <span id="voucher-discount-val">— 0 جنيه</span>
+        </div>
+        <div class="checkout-total-row" style="font-size:16px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;margin-top:4px">
+          <span>الإجمالي الكلي</span>
+          <span id="checkout-total" style="color:var(--gold);font-size:18px;font-weight:800">0 جنيه</span>
         </div>
       </div>
 
@@ -148,6 +161,21 @@
             <img id="receipt-img" style="display:none; max-width:100%; border-radius:8px;" />
           </div>
         </div>
+      </div>
+
+      <!-- Voucher -->
+      <div class="form-card full">
+        <div class="form-card-title">
+          <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          كود خصم (اختياري)
+        </div>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="f-voucher" type="text" placeholder="أدخل كود الخصم هنا..."
+            style="text-transform:uppercase;flex:1;letter-spacing:1px"
+            oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter') applyVoucher()">
+          <button class="btn-gold" style="padding:0 18px;border-radius:12px;white-space:nowrap" onclick="applyVoucher()">تطبيق</button>
+        </div>
+        <div id="voucher-msg" style="margin-top:8px;font-size:13px;display:none"></div>
       </div>
 
       <!-- Submit -->
@@ -317,12 +345,74 @@
     });
   })();
 
+  // ── منطق سعر التوصيل ──────────────────────────────
+  const SHIPPING = {
+    // مناطق القاهرة القريبة → 100
+    cairoCentral: ['مدينة نصر','المعادي','حلوان','مصر الجديدة (هليوبوليس)','الزيتون','شبرا','عين شمس','المطرية','الوايلي','باب الشعرية','البساتين','دار السلام','الخليفة','السيدة زينب','عابدين','الأزبكية','الأميرية','النزهة','المرج','طره','المعصرة','التبين'],
+    // مناطق القاهرة البعيدة → 170
+    cairoFar:    ['الشروق','بدر','العبور','مدينتي','التجمع الأول','التجمع الخامس','القطامية','المقطم','الهضبة الوسطى'],
+    // مناطق الجيزة القريبة → 100
+    gizaCentral: ['الدقي','العجوزة','المهندسين','الهرم','فيصل','العمرانية','حدائق الأهرام','بولاق الدكرور','الوراق','الحوامدية','البدرشين','الصف','أطفيح','أوسيم','كرداسة'],
+    // مناطق الجيزة البعيدة → 170
+    gizaFar:     ['6 أكتوبر','الشيخ زايد'],
+  };
+
+  function getShippingInfo(gov, district) {
+    if (!gov || !district) return { cost: null, label: '— اختر العنوان', note: '' };
+    if (gov === 'القاهرة') {
+      if (SHIPPING.cairoFar.includes(district))
+        return { cost: 170, label: '170 جنيه', note: '📍 منطقة بعيدة — سعر التوصيل 170 جنيه' };
+      return { cost: 100, label: '100 جنيه', note: '' };
+    }
+    if (gov === 'الجيزة') {
+      if (SHIPPING.gizaFar.includes(district))
+        return { cost: 170, label: '170 جنيه', note: '📍 منطقة بعيدة — سعر التوصيل 170 جنيه' };
+      return { cost: 100, label: '100 جنيه', note: '' };
+    }
+    return { cost: -1, label: 'سيتم التواصل', note: '📞 خارج القاهرة والجيزة — سيتم التواصل معكم لتحديد سعر التوصيل' };
+  }
+
+  function updateShipping() {
+    const gov      = document.getElementById('f-gov').value;
+    const district = document.getElementById('f-district').value;
+    const info     = getShippingInfo(gov, district);
+    const subtotal = getCartTotal();
+
+    document.getElementById('checkout-subtotal').textContent = subtotal + ' جنيه';
+    document.getElementById('checkout-shipping').textContent = info.label;
+
+    const noteEl = document.getElementById('shipping-note');
+    if (info.note) { noteEl.textContent = info.note; noteEl.style.display = 'block'; }
+    else           { noteEl.style.display = 'none'; }
+
+    // Voucher discount
+    const vRow    = document.getElementById('voucher-discount-row');
+    let vDiscount = 0;
+    if (appliedVoucher) {
+      vDiscount = Math.round(subtotal * appliedVoucher.discount / 100);
+      document.getElementById('voucher-discount-label').textContent = `🎟 خصم ${appliedVoucher.discount}% (${appliedVoucher.code})`;
+      document.getElementById('voucher-discount-val').textContent   = '— ' + vDiscount + ' جنيه';
+      vRow.style.display = '';
+    } else {
+      vRow.style.display = 'none';
+    }
+
+    const afterVoucher = subtotal - vDiscount;
+    const shipping     = info.cost > 0 ? info.cost : 0;
+    const grandTotal   = afterVoucher + shipping;
+    document.getElementById('checkout-total').textContent =
+      info.cost === -1
+        ? (afterVoucher) + ' جنيه + التوصيل'
+        : grandTotal + ' جنيه';
+  }
+
   function loadDistricts() {
     const gov = document.getElementById('f-gov').value;
     const sel = document.getElementById('f-district');
     sel.innerHTML = '';
     if (!gov) {
       sel.innerHTML = '<option value="">— اختر المحافظة أولاً —</option>';
+      updateShipping();
       return;
     }
     const placeholder = document.createElement('option');
@@ -333,6 +423,68 @@
       opt.value = d; opt.textContent = d;
       sel.appendChild(opt);
     });
+    updateShipping();
+  }
+
+  document.getElementById('f-district').addEventListener('change', updateShipping);
+
+  // ── Voucher Logic ───────────────────────────────
+  let appliedVoucher = null;
+
+  function getVouchers() {
+    try { return JSON.parse(localStorage.getItem('tp_vouchers') || '[]'); } catch(e) { return []; }
+  }
+
+  function applyVoucher() {
+    const code = document.getElementById('f-voucher').value.trim().toUpperCase();
+    const msgEl = document.getElementById('voucher-msg');
+
+    if (!code) {
+      msgEl.style.display = 'none';
+      appliedVoucher = null;
+      updateShipping();
+      return;
+    }
+
+    const vouchers = getVouchers();
+    const v = vouchers.find(x => x.code === code);
+
+    if (!v) {
+      showMsg('❌ الكود غير صحيح', 'var(--red)');
+      appliedVoucher = null;
+      updateShipping();
+      return;
+    }
+    if (!v.active) {
+      showMsg('⏸ هذا الكود موقوف حالياً', 'var(--red)');
+      appliedVoucher = null;
+      updateShipping();
+      return;
+    }
+    if (v.usedCount >= v.maxUses) {
+      showMsg('❌ هذا الكود تجاوز الحد الأقصى للاستخدام', 'var(--red)');
+      appliedVoucher = null;
+      updateShipping();
+      return;
+    }
+
+    appliedVoucher = v;
+    showMsg(`✅ تم تطبيق كود "${v.code}" — خصم ${v.discount}%`, 'var(--green)');
+    updateShipping();
+  }
+
+  function showMsg(text, color) {
+    const el = document.getElementById('voucher-msg');
+    el.textContent = text;
+    el.style.color = color;
+    el.style.display = 'block';
+  }
+
+  function removeVoucher() {
+    appliedVoucher = null;
+    document.getElementById('f-voucher').value = '';
+    document.getElementById('voucher-msg').style.display = 'none';
+    updateShipping();
   }
 
   buildBottomNav('');
@@ -374,8 +526,27 @@
         <span style="color:var(--gold);font-weight:700">${i.price * i.qty} جنيه</span>
       </div>
     `).join('');
+    document.getElementById('checkout-subtotal').textContent = getCartTotal() + ' جنيه';
     document.getElementById('checkout-total').textContent = getCartTotal() + ' جنيه';
     syncCartBadges();
+  }
+
+  function getGrandTotal() {
+    const gov      = document.getElementById('f-gov').value;
+    const district = document.getElementById('f-district').value;
+    const info     = getShippingInfo(gov, district);
+    const subtotal = getCartTotal();
+    const vDiscount = appliedVoucher ? Math.round(subtotal * appliedVoucher.discount / 100) : 0;
+    const afterVoucher = subtotal - vDiscount;
+    if (info.cost > 0) return afterVoucher + info.cost;
+    return afterVoucher;
+  }
+
+  function recordVoucherUse() {
+    if (!appliedVoucher) return;
+    const list = getVouchers();
+    const v = list.find(x => x.id === appliedVoucher.id);
+    if (v) { v.usedCount += 1; localStorage.setItem('tp_vouchers', JSON.stringify(list)); }
   }
 
   async function submitOrder() {
@@ -402,10 +573,20 @@
       showToast('الرجاء رفع صورة إيصال التحويل', '⚠️'); return;
     }
 
-    const cart  = getCart();
-    const total = getCartTotal();
-    const orderId = 'TP' + Date.now().toString().slice(-6);
-    const date  = new Date().toLocaleString('ar-EG');
+    const cart     = getCart();
+    const subtotal = getCartTotal();
+    const shipping = getShippingInfo(gov, district);
+    const total    = getGrandTotal();
+    const orderId  = 'TP' + Date.now().toString().slice(-6);
+    const date     = new Date().toLocaleString('ar-EG');
+
+    const shippingLabel = shipping.cost === -1 ? 'سيتم التواصل'
+                        : shipping.cost > 0    ? shipping.cost + ' جنيه'
+                        : '—';
+    const vDiscount    = appliedVoucher ? Math.round(subtotal * appliedVoucher.discount / 100) : 0;
+    const voucherLabel = appliedVoucher ? `${appliedVoucher.code} (${appliedVoucher.discount}% — ${vDiscount} جنيه)` : '—';
+
+    recordVoucherUse();
 
     // Build order items summary string
     const itemsSummary = cart.map(i => `${i.nameAr} (${i.size}مل × ${i.qty})`).join(' | ');
@@ -414,7 +595,10 @@
     const payload = {
       name, phone, address,
       items: itemsSummary,
-      total: total + ' جنيه',
+      subtotal: subtotal + ' جنيه',
+      shipping: shippingLabel,
+      voucher:  voucherLabel,
+      total:    total + ' جنيه',
       payment: selectedPayment === 'cod' ? 'الدفع عند الاستلام' : 'فودافون كاش / إنستاباي',
       date,
       orderId
@@ -438,9 +622,9 @@
           body: JSON.stringify({
             name,
             phone,
-            email: '',        // اختياري
+            email: '',
             address,
-            amount: total,
+            amount: total,   // المنتجات + التوصيل
             orderId
           })
         });

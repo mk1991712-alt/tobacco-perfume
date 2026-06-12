@@ -105,15 +105,15 @@
   function buildCard(p) {
     const defaultSize = p.price50ml ? '50' : '60';
     const defaultPrice = defaultSize === '50' ? p.price50ml : p.price60ml;
-    const old = getOldPriceLocal(defaultPrice);
-    const disc = discountPct(defaultPrice);
+    const disc = discountPct(defaultPrice, p);
+    const old  = disc > 0 ? getOldPriceLocal(defaultPrice, p) : null;
     return `
       <div class="product-card" onclick="openModal(${p.id})">
         <div class="card-thumb ${p.category}">
           <div class="card-thumb-bg"></div>
           <div class="bottle-wrap">${p.image ? `<img src="${p.image}" class="bottle-img" alt="${p.nameEn}" loading="lazy" onerror="this.style.opacity='0'">` : bottleSVG()}</div>
           <div class="card-brand-label">${p.brand || p.nameEn}</div>
-          <div class="discount-badge">-${disc}%</div>
+          ${disc > 0 ? `<div class="discount-badge">-${disc}%</div>` : ''}
         </div>
         <div class="card-body">
           <div class="card-stars">
@@ -128,7 +128,7 @@
           </div>
           <div class="card-price-row">
             <span class="price-new" id="price-${p.id}">${defaultPrice} جنيه</span>
-            <span class="price-old" id="old-${p.id}">${old} جنيه</span>
+            ${old ? `<span class="price-old" id="old-${p.id}">${old} جنيه</span>` : `<span class="price-old" id="old-${p.id}" style="display:none"></span>`}
           </div>
           <button class="card-add-btn" onclick="event.stopPropagation(); addToCartFromCard(${p.id}, this)">+ أضف للسلة</button>
           <div class="bottle-notice">
@@ -142,10 +142,13 @@
   function selectSize(btn, id) {
     btn.closest('.card-sizes').querySelectorAll('.size-pill').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    const p = getPerfumeById(id);
+    const p     = getPerfumeById(id);
     const price = btn.dataset.size === '50' ? p.price50ml : p.price60ml;
+    const disc  = discountPct(price, p);
+    const old   = disc > 0 ? getOldPriceLocal(price, p) : null;
     document.getElementById('price-' + id).textContent = price + ' جنيه';
-    document.getElementById('old-' + id).textContent = getOldPriceLocal(price) + ' جنيه';
+    const oldEl = document.getElementById('old-' + id);
+    if (oldEl) { oldEl.textContent = old ? old + ' جنيه' : ''; oldEl.style.display = old ? '' : 'none'; }
   }
 
   function setFilter(btn, cat) {
